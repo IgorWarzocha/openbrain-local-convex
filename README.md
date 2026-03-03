@@ -17,6 +17,8 @@ No Slack. No MCP. No cloud embedding bill.
 - Show memory stats (`stats`)
 - Remove a thought by id (`remove`)
 
+![openbrain](https://github.com/user-attachments/assets/95eaa96a-77c6-4d19-8600-72dd05a98d16)
+
 ## Choose Your Install Mode
 
 ## 1) Localhost Mode (single machine)
