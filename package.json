@@ -30,9 +30,10 @@
     "build": "npm run clean && tsc -p tsconfig.json",
     "clean": "rm -rf dist",
     "health": "tsx src/cli.ts health",
+    "lint": "oxlint . --deny-warnings",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
-    "check": "npm run typecheck && npm run test",
+    "check": "npm run lint && npm run typecheck && npm run test",
     "bootstrap": "bash scripts/bootstrap-local.sh",
     "link:global": "bash scripts/link-global.sh",
     "link:global:system": "bash scripts/link-global.sh --system",
@@ -57,6 +58,7 @@
   },
   "devDependencies": {
     "@types/node": "^25.3.3",
+    "oxlint": "^1.51.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
