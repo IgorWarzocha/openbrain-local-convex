@@ -5,36 +5,55 @@ description: Operate and troubleshoot OpenBrain memory through the `brain` CLI a
 
 # OpenBrain Operator
 
-## Overview
+This is the primary operator workflow and is optimized for `localhost` installations.
+Use this file as the default source of truth. Do not use repo-wide docs.
 
-Run OpenBrain reliably from repo root or global `brain`, then verify stored semantic memory behavior instead of guessing. Treat every operation as: execute, verify, report evidence.
+## LAN Switch Rule (Required)
 
-Primary references:
-- `docs/CLI_USAGE.md`
-- `docs/TROUBLESHOOTING.md`
-- `README.md`
+- `references/lan-operations.md`
+- `references/troubleshooting.md`
 
-## Preflight
-
-Detect active mode:
-- Local mode: `CONVEX_URL` set, no `OPENBRAIN_REMOTE_URL`.
-- Remote mode: `OPENBRAIN_REMOTE_URL` set.
-
-If `brain` is unavailable globally, use:
-
-```bash
-npm run brain -- <command>
-```
-
-Run:
+1. Run:
 
 ```bash
 brain health
 ```
 
-If health fails, stop and diagnose before capture/search.
+If `brain` is unavailable:
 
-## Core Commands
+```bash
+npm run brain -- health
+```
+
+2. If health JSON shows `"mode": "remote"`:
+   - Switch to LAN workflow by loading `references/lan-operations.md`.
+   - For this run, treat localhost instructions in this file as deleted.
+   - Continue with LAN commands only.
+3. If health JSON shows `"mode": "local"`:
+   - Stay in this file and run localhost workflow below.
+4. If both `CONVEX_URL` and `OPENBRAIN_REMOTE_URL` exist, remote wins (`lan`).
+
+## Localhost Workflow (Default)
+
+### 1. Preflight
+
+```bash
+node -v
+npm -v
+brain health
+```
+
+If `brain` is not found:
+
+```bash
+npm run brain -- health
+```
+
+Health must return JSON containing:
+- `"ok": true`
+- `"mode": "local"`
+
+### 2. Core Operations
 
 Capture:
 
@@ -66,45 +85,42 @@ Remove:
 brain remove "<thought_id>"
 ```
 
-## Retrieval Tuning Playbook
+### 3. Remove Validation
 
-When search feels too strict:
-- Lower threshold (`0.2` -> `0.1` -> `0.0`).
-- Increase limit (`8` -> `20`).
-- Rephrase query semantically.
-
-Example:
+1. Get ID from:
 
 ```bash
-brain search "career transition notes" --limit 20 --threshold 0.1
+brain recent --limit 20
 ```
 
-## API Usage (When CLI Is Not Enough)
-
-Health:
+2. Remove:
 
 ```bash
-curl -s http://<server-ip>:8787/health
+brain remove "<thought_id>"
 ```
 
-Capture:
+3. Verify ID is gone:
 
 ```bash
-curl -s -X POST http://<server-ip>:8787/capture \
-  -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+brain recent --limit 20
+brain search "<same content>" --limit 20 --threshold 0.0
 ```
 
-With key auth:
+### 4. Retrieval Tuning
+
+If too strict:
 
 ```bash
-curl -s -X POST http://<server-ip>:8787/capture \
-  -H 'x-openbrain-key: <shared-secret>' \
-  -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+brain search "<query>" --limit 20 --threshold 0.0
 ```
 
-## Fail-Fast Troubleshooting
+If too noisy:
+
+```bash
+brain search "<query>" --limit 8 --threshold 0.3
+```
+
+## Localhost Troubleshooting (Fast Path)
 
 - `brain: command not found`:
 
@@ -113,21 +129,26 @@ npm run link:global
 which brain
 ```
 
-- `fetch failed` in remote mode:
-  - Check `OPENBRAIN_REMOTE_URL`.
-  - Check server bind is `0.0.0.0:8787`.
-  - Check `bash scripts/services.sh status` on server.
+- Health fails:
+  - Run `npm run brain -- health`.
+  - If still failing, load `references/troubleshooting.md`.
 - `401 unauthorized`:
-  - Align `OPENBRAIN_API_KEY` between server and client.
-- No search hits after capture:
-  - Confirm capture succeeded.
-  - Retry with lower threshold.
-  - Check `brain stats` incremented.
+  - Align `OPENBRAIN_API_KEY`.
+  - See `references/troubleshooting.md`.
+
+## Execution Contract
+
+1. Execute only commands for the active mode.
+2. Verify each step with concrete evidence (`ok`, IDs, counts, or HTTP responses).
+3. On first failure, switch to `references/troubleshooting.md` and run the matching fix path.
+4. Re-run health after each fix before continuing.
 
 ## Response Contract
 
-When running this skill for a user:
-- Show exact commands executed.
-- Show key outputs (health, capture id, match count).
-- State current mode (`local` or `remote`).
-- End with clear next action only if something is still broken.
+1. Report active mode (`localhost` or `lan`).
+2. Show exact commands executed.
+3. Show key outputs:
+   - Health status.
+   - Capture/remove thought ID when applicable.
+   - Search hit count or empty result.
+4. If unresolved, provide one next action with the exact command.

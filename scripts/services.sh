@@ -11,6 +11,9 @@ DEFAULT_RUNTIME_ALIAS="llama.cpp-linux-x86_64-vulkan-avx2"
 LMSTUDIO_RUNTIME_ALIAS="${LMSTUDIO_RUNTIME_ALIAS:-$DEFAULT_RUNTIME_ALIAS}"
 LMSTUDIO_GPU_OFFLOAD="${LMSTUDIO_GPU_OFFLOAD:-max}"
 LMSTUDIO_REQUIRE_VULKAN="${LMSTUDIO_REQUIRE_VULKAN:-1}"
+LMSTUDIO_BASE_URL="${LMSTUDIO_BASE_URL:-http://127.0.0.1:1234/v1}"
+LMSTUDIO_STARTUP_TIMEOUT_SECONDS="${LMSTUDIO_STARTUP_TIMEOUT_SECONDS:-45}"
+LMSTUDIO_HEALTH_INTERVAL_SECONDS="${LMSTUDIO_HEALTH_INTERVAL_SECONDS:-5}"
 
 if [ -f "$WORKDIR/.env" ]; then
   # Optional override from .env.
@@ -29,6 +32,18 @@ if [ -f "$WORKDIR/.env" ]; then
   require_vulkan_from_env="$(grep -E '^LMSTUDIO_REQUIRE_VULKAN=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
   if [ -n "$require_vulkan_from_env" ]; then
     LMSTUDIO_REQUIRE_VULKAN="$require_vulkan_from_env"
+  fi
+  base_url_from_env="$(grep -E '^LMSTUDIO_BASE_URL=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$base_url_from_env" ]; then
+    LMSTUDIO_BASE_URL="$base_url_from_env"
+  fi
+  startup_timeout_from_env="$(grep -E '^LMSTUDIO_STARTUP_TIMEOUT_SECONDS=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$startup_timeout_from_env" ]; then
+    LMSTUDIO_STARTUP_TIMEOUT_SECONDS="$startup_timeout_from_env"
+  fi
+  health_interval_from_env="$(grep -E '^LMSTUDIO_HEALTH_INTERVAL_SECONDS=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$health_interval_from_env" ]; then
+    LMSTUDIO_HEALTH_INTERVAL_SECONDS="$health_interval_from_env"
   fi
 fi
 
@@ -54,7 +69,7 @@ escape_sed_replacement() {
 render_template() {
   local template="$1"
   local output="$2"
-  local escaped_workdir escaped_home escaped_lms_bin escaped_model escaped_runtime_alias escaped_gpu_offload escaped_require_vulkan
+  local escaped_workdir escaped_home escaped_lms_bin escaped_model escaped_runtime_alias escaped_gpu_offload escaped_require_vulkan escaped_base_url escaped_startup_timeout escaped_health_interval
   escaped_workdir="$(escape_sed_replacement "$WORKDIR")"
   escaped_home="$(escape_sed_replacement "$HOME")"
   escaped_lms_bin="$(escape_sed_replacement "$LMSTUDIO_BIN")"
@@ -62,6 +77,9 @@ render_template() {
   escaped_runtime_alias="$(escape_sed_replacement "$LMSTUDIO_RUNTIME_ALIAS")"
   escaped_gpu_offload="$(escape_sed_replacement "$LMSTUDIO_GPU_OFFLOAD")"
   escaped_require_vulkan="$(escape_sed_replacement "$LMSTUDIO_REQUIRE_VULKAN")"
+  escaped_base_url="$(escape_sed_replacement "${LMSTUDIO_BASE_URL%/}")"
+  escaped_startup_timeout="$(escape_sed_replacement "$LMSTUDIO_STARTUP_TIMEOUT_SECONDS")"
+  escaped_health_interval="$(escape_sed_replacement "$LMSTUDIO_HEALTH_INTERVAL_SECONDS")"
   sed \
     -e "s/__WORKDIR__/${escaped_workdir}/g" \
     -e "s/__USER_HOME__/${escaped_home}/g" \
@@ -70,17 +88,22 @@ render_template() {
     -e "s/__LMSTUDIO_RUNTIME_ALIAS__/${escaped_runtime_alias}/g" \
     -e "s/__LMSTUDIO_GPU_OFFLOAD__/${escaped_gpu_offload}/g" \
     -e "s/__LMSTUDIO_REQUIRE_VULKAN__/${escaped_require_vulkan}/g" \
+    -e "s/__LMSTUDIO_BASE_URL__/${escaped_base_url}/g" \
+    -e "s/__LMSTUDIO_STARTUP_TIMEOUT_SECONDS__/${escaped_startup_timeout}/g" \
+    -e "s/__LMSTUDIO_HEALTH_INTERVAL_SECONDS__/${escaped_health_interval}/g" \
     "$template" >"$output"
 }
 
 preflight() {
   require_cmd systemctl
   require_cmd sed
+  require_cmd curl
   if ! systemctl --user --version >/dev/null 2>&1; then
     die "systemctl --user is unavailable in this environment"
   fi
   [ -d "$WORKDIR" ] || die "workdir does not exist: $WORKDIR"
   [ -x "$LMSTUDIO_BIN" ] || die "LM Studio CLI not found or not executable: $LMSTUDIO_BIN"
+  [ -x "$WORKDIR/scripts/lmstudio-supervisor.sh" ] || die "LM Studio supervisor script not found or not executable: $WORKDIR/scripts/lmstudio-supervisor.sh"
   if command -v loginctl >/dev/null 2>&1; then
     linger_state="$(loginctl show-user "$USER" -p Linger --value 2>/dev/null || true)"
     if [ "$linger_state" != "yes" ]; then
@@ -101,6 +124,12 @@ preflight() {
       die "LMSTUDIO_REQUIRE_VULKAN must be 0 or 1"
       ;;
   esac
+  if ! [[ "$LMSTUDIO_STARTUP_TIMEOUT_SECONDS" =~ ^[0-9]+$ ]] || [ "$LMSTUDIO_STARTUP_TIMEOUT_SECONDS" -lt 1 ]; then
+    die "LMSTUDIO_STARTUP_TIMEOUT_SECONDS must be a positive integer"
+  fi
+  if ! [[ "$LMSTUDIO_HEALTH_INTERVAL_SECONDS" =~ ^[0-9]+$ ]] || [ "$LMSTUDIO_HEALTH_INTERVAL_SECONDS" -lt 1 ]; then
+    die "LMSTUDIO_HEALTH_INTERVAL_SECONDS must be a positive integer"
+  fi
   if ! "$LMSTUDIO_BIN" runtime ls | grep -Fq "$LMSTUDIO_RUNTIME_ALIAS"; then
     die "LM Studio runtime alias not installed: $LMSTUDIO_RUNTIME_ALIAS"
   fi
@@ -108,6 +137,7 @@ preflight() {
     die "Vulkan enforcement is enabled but runtime alias is not Vulkan: $LMSTUDIO_RUNTIME_ALIAS"
   fi
   log "LM Studio runtime alias: $LMSTUDIO_RUNTIME_ALIAS (gpu offload: $LMSTUDIO_GPU_OFFLOAD)"
+  log "LM Studio probe target: ${LMSTUDIO_BASE_URL%/}/models (startup timeout ${LMSTUDIO_STARTUP_TIMEOUT_SECONDS}s, interval ${LMSTUDIO_HEALTH_INTERVAL_SECONDS}s)"
 }
 
 install_units() {
@@ -119,9 +149,15 @@ install_units() {
   log "installed unit files into $USER_SYSTEMD_DIR"
 }
 
-enable_and_start() {
-  systemctl --user enable --now "${SERVICES[@]}"
-  log "enabled and started ${SERVICES[*]}"
+enable_units() {
+  systemctl --user enable "${SERVICES[@]}"
+  log "enabled ${SERVICES[*]}"
+}
+
+restart_units() {
+  # Always restart on install so updated unit files and env settings take effect.
+  systemctl --user restart "${SERVICES[@]}"
+  log "restarted ${SERVICES[*]}"
 }
 
 stop_and_disable() {
@@ -152,7 +188,8 @@ case "$command" in
   install)
     preflight
     install_units
-    enable_and_start
+    enable_units
+    restart_units
     status_units
     ;;
   start)

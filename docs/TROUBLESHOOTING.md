@@ -9,9 +9,9 @@ Cause:
 Fix:
 
 ```bash
-npx convex dev --tail-logs disable
-~/.lmstudio/bin/lms daemon up
-~/.lmstudio/bin/lms server start
+bash scripts/services.sh status
+bash scripts/services.sh restart
+journalctl --user -u lmstudio.service -u convex-local.service -u openbrain-api.service -n 100 --no-pager
 ```
 
 If using LAN client mode (`OPENBRAIN_REMOTE_URL` set), this means client cannot reach server API.
@@ -48,6 +48,25 @@ Then restart services:
 ```bash
 bash scripts/services.sh restart
 ```
+
+## `lmstudio.service` shows `active (exited)`
+
+Cause:
+- Stale or invalid user unit install (including missing `scripts/lmstudio-supervisor.sh`) left LM Studio in legacy startup mode.
+
+Fix:
+
+```bash
+bash scripts/services.sh install
+systemctl --user status lmstudio.service --no-pager
+systemctl --user show lmstudio.service -p Type,Restart,ActiveState,SubState --no-pager
+```
+
+Expected:
+- `Type=simple`
+- `Restart=always`
+- `ActiveState=active`
+- `SubState=running`
 
 ## LM Studio model mismatch errors
 
