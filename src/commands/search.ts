@@ -1,9 +1,9 @@
 import { embedText } from "../lmstudio";
 import { api, createConvexClient } from "../convexClient";
-import type { OpenBrainConfig } from "../config";
+import type { LocalOpenBrainConfig } from "../config";
 
 export async function searchThoughts(
-  cfg: OpenBrainConfig,
+  cfg: LocalOpenBrainConfig,
   input: {
     query: string;
     limit?: number;

@@ -2,6 +2,11 @@
 
 Run all commands from repository root.
 
+Mode selection:
+
+- Local mode: set `CONVEX_URL` (default behavior).
+- Remote LAN mode: set `OPENBRAIN_REMOTE_URL=http://<server-ip>:8787` and optionally `OPENBRAIN_API_KEY`.
+
 To use commands globally from anywhere:
 
 ```bash
@@ -56,6 +61,15 @@ Example:
 
 ```bash
 curl -s -X POST http://127.0.0.1:8787/capture \
+  -H 'content-type: application/json' \
+  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+```
+
+With key auth enabled on server:
+
+```bash
+curl -s -X POST "http://192.168.0.113:8787/capture" \
+  -H 'x-openbrain-key: <shared-secret>' \
   -H 'content-type: application/json' \
   -d '{"content":"note from api","source":"api","tags":["ops"]}'
 ```

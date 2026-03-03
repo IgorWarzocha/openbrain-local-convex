@@ -1,6 +1,7 @@
 import http from "node:http";
+import { timingSafeEqual } from "node:crypto";
 import { URL } from "node:url";
-import { getConfig } from "./config";
+import { assertLocalConfig, getConfig } from "./config";
 import { captureThought } from "./commands/capture";
 import { getStats } from "./commands/stats";
 import { listRecentThoughts } from "./commands/recent";
@@ -31,8 +32,31 @@ function sendJson(res: http.ServerResponse, status: number, body: JsonObject): v
   res.end(JSON.stringify(body));
 }
 
+function safeEquals(left: string, right: string): boolean {
+  const leftBuffer = Buffer.from(left, "utf8");
+  const rightBuffer = Buffer.from(right, "utf8");
+  if (leftBuffer.length !== rightBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(leftBuffer, rightBuffer);
+}
+
+function getHeaderValue(headers: http.IncomingHttpHeaders, key: string): string | null {
+  const value = headers[key];
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+  if (Array.isArray(value)) {
+    const first = value.find((entry) => entry.trim().length > 0)?.trim();
+    return first ?? null;
+  }
+  return null;
+}
+
 async function main() {
   const cfg = getConfig();
+  assertLocalConfig(cfg, "openbrain api server");
 
   const server = http.createServer(async (req, res) => {
     try {
@@ -42,14 +66,25 @@ async function main() {
       }
 
       const url = new URL(req.url, `http://${req.headers.host ?? `${cfg.apiHost}:${cfg.apiPort}`}`);
+      if (cfg.apiKey) {
+        const headerKey = getHeaderValue(req.headers, "x-openbrain-key");
+        const queryKey = url.searchParams.get("key")?.trim() || null;
+        const providedKey = headerKey ?? queryKey;
+        if (!providedKey || !safeEquals(providedKey, cfg.apiKey)) {
+          sendJson(res, 401, { ok: false, error: "unauthorized" });
+          return;
+        }
+      }
 
       if (req.method === "GET" && url.pathname === "/health") {
         const stats = await getStats(cfg);
         const lm = await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
         sendJson(res, 200, {
           ok: true,
-          stats,
-          lmStudioEmbeddingDimensions: lm.dimensions,
+          data: {
+            stats,
+            lmStudioEmbeddingDimensions: lm.dimensions,
+          },
         });
         return;
       }

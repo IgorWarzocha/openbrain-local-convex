@@ -14,10 +14,13 @@
   - Pure input parsing/validation shared by CLI + HTTP API.
 
 - `src/cli.ts`
-  - User-facing CLI entrypoint.
+  - User-facing CLI entrypoint (local Convex mode or remote LAN mode).
 
 - `src/server.ts`
-  - Local HTTP API entrypoint.
+  - Local HTTP API entrypoint (optionally LAN-exposed with API key auth).
+
+- `src/remoteApi.ts`
+  - CLI remote transport to server API for no-SSH LAN clients.
 
 ## Ops Lanes
 
@@ -32,4 +35,3 @@
 
 - `scripts/tmux-start.sh`
   - Optional tmux-based runtime for non-systemd operation.
-

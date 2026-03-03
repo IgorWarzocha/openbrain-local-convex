@@ -14,6 +14,13 @@ npx convex dev --tail-logs disable
 ~/.lmstudio/bin/lms server start
 ```
 
+If using LAN client mode (`OPENBRAIN_REMOTE_URL` set), this means client cannot reach server API.
+Check:
+- Server IP/port in `OPENBRAIN_REMOTE_URL`
+- `OPENBRAIN_API_HOST=0.0.0.0` on server
+- firewall allows TCP `8787`
+- `openbrain-api` service is running
+
 ## Deploy script says `.env.local` missing on server
 
 Cause:
@@ -65,3 +72,11 @@ Fix:
 - Stop conflicting process/session first.
 - If using services: `bash scripts/services.sh restart`
 
+## CLI gets `401 unauthorized`
+
+Cause:
+- Server has `OPENBRAIN_API_KEY` set, client does not.
+
+Fix:
+- Set same `OPENBRAIN_API_KEY` in client `.env`.
+- Or disable key auth by removing `OPENBRAIN_API_KEY` on server and restarting services.

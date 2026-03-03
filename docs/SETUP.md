@@ -67,3 +67,47 @@ ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ssh <host> "cd <remote_dir> && npm run health"
 ```
 
+6. Expose API on LAN (for clients without SSH):
+
+- On server `.env`, set:
+  - `OPENBRAIN_API_HOST=0.0.0.0`
+  - `OPENBRAIN_API_PORT=8787`
+  - Optional: `OPENBRAIN_API_KEY=<shared-secret>`
+
+```bash
+ssh <host> "cd <remote_dir> && bash scripts/services.sh restart"
+```
+
+## LAN Client Mode (no SSH)
+
+On any client machine in the same LAN:
+
+1. Install project:
+
+```bash
+npm ci
+```
+
+2. Configure `.env`:
+
+```bash
+cp .env.example .env
+```
+
+Set:
+- `OPENBRAIN_REMOTE_URL=http://<server-ip>:8787`
+- `OPENBRAIN_API_KEY=<shared-secret>` if server has key auth.
+
+3. Use CLI as normal:
+
+```bash
+npm run brain -- stats
+npm run brain -- capture "hello from lan client"
+```
+
+Optional per-user global install on that client:
+
+```bash
+npm run link:global
+brain search "hello"
+```

@@ -123,6 +123,55 @@ ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ssh <host> "cd <remote_dir> && npm run health"
 ```
 
+6. Make API reachable on LAN:
+
+- On the server `.env`, set:
+  - `OPENBRAIN_API_HOST=0.0.0.0`
+  - `OPENBRAIN_API_PORT=8787`
+  - Optional: `OPENBRAIN_API_KEY=<shared-secret>`
+- Restart server services:
+
+```bash
+ssh <host> "cd <remote_dir> && bash scripts/services.sh restart"
+```
+
+## 3) LAN Client Mode (no SSH for daily usage)
+
+Use this on any LAN computer that should query/capture thoughts against your server.
+
+1. Clone the repo and install deps:
+
+```bash
+npm ci
+```
+
+2. Create `.env` with remote target:
+
+```bash
+cp .env.example .env
+```
+
+Then set:
+- `OPENBRAIN_REMOTE_URL=http://192.168.0.113:8787`
+- `OPENBRAIN_API_KEY=<shared-secret>` (only if server requires it)
+
+3. Use `brain` normally from that machine:
+
+```bash
+npm run brain -- stats
+npm run brain -- capture "note from another laptop"
+npm run brain -- search "what did I write about launch?"
+```
+
+Optional for from-any-folder usage on that client:
+
+```bash
+npm run link:global
+brain stats
+```
+
+When `OPENBRAIN_REMOTE_URL` is set, the CLI talks to the remote API directly and does not require local Convex/LM Studio.
+
 ## Everyday Commands
 
 ```bash

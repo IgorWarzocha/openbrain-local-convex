@@ -7,6 +7,13 @@ import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { checkLmStudioHealth } from "./lmstudio";
 import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
+import {
+  remoteCaptureThought,
+  remoteGetStats,
+  remoteHealth,
+  remoteListRecentThoughts,
+  remoteSearchThoughts,
+} from "./remoteApi";
 
 const program = new Command();
 
@@ -23,11 +30,12 @@ program
   .option("--tags <tags>", "Comma-separated tags", "")
   .action(async (content, options) => {
     const cfg = getConfig();
-    const result = await captureThought(cfg, {
-      content,
-      source: parseThoughtSource(options.source, "cli"),
-      tags: normalizeTags(options.tags),
-    });
+    const source = parseThoughtSource(options.source, "cli");
+    const tags = normalizeTags(options.tags);
+    const result =
+      cfg.mode === "remote"
+        ? await remoteCaptureThought(cfg, { content, source, tags })
+        : await captureThought(cfg, { content, source, tags });
     console.log(
       JSON.stringify(
         {
@@ -35,6 +43,7 @@ program
           thoughtId: result.id,
           createdAt: new Date(result.createdAt).toISOString(),
           embeddingDimensions: result.embeddingDimensions,
+          mode: cfg.mode,
         },
         null,
         2,
@@ -50,11 +59,12 @@ program
   .option("--threshold <threshold>", "Similarity threshold", "0.2")
   .action(async (query, options) => {
     const cfg = getConfig();
-    const result = await searchThoughts(cfg, {
-      query,
-      limit: parseLimit(options.limit, 8),
-      threshold: parseThreshold(options.threshold, 0.2),
-    });
+    const limit = parseLimit(options.limit, 8);
+    const threshold = parseThreshold(options.threshold, 0.2);
+    const result =
+      cfg.mode === "remote"
+        ? await remoteSearchThoughts(cfg, { query, limit, threshold })
+        : await searchThoughts(cfg, { query, limit, threshold });
     console.log(JSON.stringify(result, null, 2));
   });
 
@@ -64,7 +74,11 @@ program
   .option("--limit <limit>", "Result limit", "20")
   .action(async (options) => {
     const cfg = getConfig();
-    const result = await listRecentThoughts(cfg, parseLimit(options.limit, 20));
+    const limit = parseLimit(options.limit, 20);
+    const result =
+      cfg.mode === "remote"
+        ? await remoteListRecentThoughts(cfg, limit)
+        : await listRecentThoughts(cfg, limit);
     console.log(JSON.stringify(result, null, 2));
   });
 
@@ -73,21 +87,39 @@ program
   .description("Get thought stats")
   .action(async () => {
     const cfg = getConfig();
-    const result = await getStats(cfg);
+    const result = cfg.mode === "remote" ? await remoteGetStats(cfg) : await getStats(cfg);
     console.log(JSON.stringify(result, null, 2));
   });
 
 program
   .command("health")
-  .description("Check Convex + LM Studio wiring")
+  .description("Check local runtime or remote API wiring")
   .action(async () => {
     const cfg = getConfig();
+    if (cfg.mode === "remote") {
+      const result = await remoteHealth(cfg);
+      console.log(
+        JSON.stringify(
+          {
+            ok: true,
+            mode: "remote",
+            remoteUrl: cfg.remoteUrl,
+            apiKeyEnabled: Boolean(cfg.apiKey),
+            data: result,
+          },
+          null,
+          2,
+        ),
+      );
+      return;
+    }
     const stats = await getStats(cfg);
     const lm = await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
     console.log(
       JSON.stringify(
         {
           ok: true,
+          mode: "local",
           convexUrl: cfg.convexUrl,
           lmStudioBaseUrl: cfg.lmStudioBaseUrl,
           lmStudioModel: cfg.lmStudioEmbedModel,
@@ -101,6 +133,12 @@ program
   });
 
 program.parseAsync(process.argv).catch((error) => {
+  if (error instanceof TypeError && /fetch/i.test(error.message)) {
+    console.error(
+      "Network error talking to OpenBrain API. Check OPENBRAIN_REMOTE_URL, LAN reachability, and server status.",
+    );
+    process.exit(1);
+  }
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
