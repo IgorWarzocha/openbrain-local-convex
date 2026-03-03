@@ -31,7 +31,7 @@
     "clean": "rm -rf dist",
     "health": "tsx src/cli.ts health",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "tsx --test tests/*.test.ts",
     "check": "npm run typecheck && npm run test",
     "bootstrap": "bash scripts/bootstrap-local.sh",
     "link:global": "bash scripts/link-global.sh",
