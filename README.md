@@ -63,6 +63,29 @@ npm run brain -- capture "Decided to move launch by one week" --tags planning,re
 npm run brain -- search "What did I say about launch timeline?"
 ```
 
+## Enable `brain` Everywhere
+
+Recommended (no sudo, per-user install):
+
+```bash
+npm run link:global
+```
+
+Optional (sudo, system-wide install):
+
+```bash
+npm run link:global:system
+```
+
+Then from any directory:
+
+```bash
+brain capture "your thought"
+brain search "your query"
+brain recent --limit 20
+brain stats
+```
+
 ## 2) Local Server Mode (separate machine on your LAN)
 
 Use this when you want it always on in your network.

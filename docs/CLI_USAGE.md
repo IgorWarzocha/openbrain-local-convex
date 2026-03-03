@@ -2,6 +2,18 @@
 
 Run all commands from repository root.
 
+To use commands globally from anywhere:
+
+```bash
+npm run link:global
+```
+
+System-wide (requires sudo):
+
+```bash
+npm run link:global:system
+```
+
 ## Health
 
 ```bash
