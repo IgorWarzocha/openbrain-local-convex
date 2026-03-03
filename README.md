@@ -1,27 +1,25 @@
-# OpenBrain
+# OpenBrain (Convex + LM Studio)
 
-Local-first second brain stack:
-- Convex local deployment for storage/search.
-- LM Studio headless embeddings runtime.
-- Local CLI + HTTP API.
-- No Slack, no ChatGPT connector, no MCP.
+Personal second-brain memory you can run:
+1. On your own machine (`localhost`)
+2. On a dedicated local server (for example `192.168.x.x`)
 
-## What You Get
+No Slack. No MCP. No cloud embedding bill.
 
-- `captureThought` / `searchThoughts` / `listRecentThoughts` / `getStats`
-- Semantic search over stored thoughts
-- Linux server deployment scripts (sync, bootstrap, systemd, tmux)
+## What It Does
 
-## Prerequisites
+- Save thoughts (`capture`)
+- Find thoughts by meaning (`search`)
+- List recent notes (`recent`)
+- Show memory stats (`stats`)
 
-- Node.js `>=20`
-- `ssh` and `rsync` (for remote deploy)
-- LM Studio headless runtime (`lms`) for embeddings
-- Embedding model available in LM Studio:
-  - target HF model family: `google/embeddinggemma-300m`
-  - typical LM Studio loaded identifier: `text-embedding-embeddinggemma-300m-qat`
+## Choose Your Install Mode
 
-## Quick Start (Local, Deterministic)
+## 1) Localhost Mode (single machine)
+
+Use this if you just want everything running on your own laptop/desktop.
+
+### Steps
 
 1. Install dependencies:
 
@@ -29,19 +27,19 @@ Local-first second brain stack:
 npm ci
 ```
 
-2. Bootstrap Convex local deployment (interactive on first run):
+2. Bootstrap Convex local deployment (first run is interactive):
 
 ```bash
 npx convex dev --configure new --dev-deployment local --once
 ```
 
-3. Configure env:
+3. Create env file:
 
 ```bash
 cp .env.example .env
 ```
 
-4. Start LM Studio runtime and model:
+4. Start LM Studio runtime and load embedding model:
 
 ```bash
 ~/.lmstudio/bin/lms daemon up
@@ -49,30 +47,32 @@ cp .env.example .env
 ~/.lmstudio/bin/lms server start
 ```
 
-5. Validate:
+5. Verify:
 
 ```bash
 npm run health
 ```
 
-6. Use CLI:
+6. Start using it:
 
 ```bash
 npm run openbrain -- capture "Decided to move launch by one week" --tags planning,release
-npm run openbrain -- search "What did I say about the launch timeline?"
-npm run openbrain -- recent --limit 10
-npm run openbrain -- stats
+npm run openbrain -- search "What did I say about launch timeline?"
 ```
 
-## Server Deploy
+## 2) Local Server Mode (separate machine on your LAN)
 
-1. Sync code and install deps:
+Use this when you want OpenBrain always on in your network.
+
+### Steps
+
+1. Deploy code to server:
 
 ```bash
 bash scripts/deploy-server.sh <host> <remote_dir>
 ```
 
-2. Run one-time interactive Convex bootstrap on server:
+2. Run one-time Convex bootstrap on server:
 
 ```bash
 bash scripts/bootstrap-server-interactive.sh <host> <remote_dir>
@@ -85,7 +85,7 @@ ssh <host> "curl -fsSL https://lmstudio.ai/install.sh | bash"
 ssh <host> "~/.lmstudio/bin/lms get embeddinggemma -n 20 -y"
 ```
 
-4. Install and start services:
+4. Install/start services:
 
 ```bash
 ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
@@ -97,36 +97,36 @@ ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ssh <host> "cd <remote_dir> && npm run health"
 ```
 
-## Service Lifecycle
+## Everyday Commands
 
 ```bash
-bash scripts/services.sh install
-bash scripts/services.sh status
-bash scripts/services.sh logs
-bash scripts/services.sh restart
-bash scripts/services.sh stop
-bash scripts/services.sh uninstall
+npm run openbrain -- capture "your thought"
+npm run openbrain -- search "your query"
+npm run openbrain -- recent --limit 20
+npm run openbrain -- stats
 ```
 
-## Optional tmux Runtime
+## API Endpoints
 
-```bash
-bash scripts/tmux-start.sh openbrain
-tmux attach -t openbrain
-```
+- `GET /health`
+- `GET /stats`
+- `GET /recent?limit=20`
+- `POST /capture`
+- `POST /search`
 
-## Quality Gates
+## Credits
 
-```bash
-npm run typecheck
-npm run test
-npm run check
-```
+This project is inspired by Nate B. Jones’ “Build Your Open Brain” guide and companion prompt work:
+- https://promptkit.natebjones.com/20260224_uq1_guide_main
 
-## Docs
+Attribution notes:
+- The guide explicitly states it is “Built by Nate B. Jones.”
+- Nate’s public profile positions him as an AI educator/analyst focused on practical AI workflows.
+
+This repository is an implementation variant (Convex + LM Studio, no Slack/MCP) based on that direction.
+
+## More Docs
 
 - [Setup](/home/igorw/Frameworks/openbrain/docs/SETUP.md)
 - [CLI Usage](/home/igorw/Frameworks/openbrain/docs/CLI_USAGE.md)
 - [Troubleshooting](/home/igorw/Frameworks/openbrain/docs/TROUBLESHOOTING.md)
-- [Credential Template](/home/igorw/Frameworks/openbrain/docs/CREDENTIAL_TRACKER_TEMPLATE.md)
-- [Lane Map](/home/igorw/Frameworks/openbrain/docs/LANE_MAP.md)
