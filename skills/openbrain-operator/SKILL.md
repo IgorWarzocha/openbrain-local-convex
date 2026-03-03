@@ -60,6 +60,12 @@ Stats:
 brain stats
 ```
 
+Remove:
+
+```bash
+brain remove "<thought_id>"
+```
+
 ## Retrieval Tuning Playbook
 
 When search feels too strict:

@@ -143,3 +143,20 @@ export const getStats = query({
     };
   },
 });
+
+export const removeThought = mutation({
+  args: {
+    id: v.id("thoughts"),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db.get(args.id);
+    if (!existing) {
+      throw new Error("thought not found");
+    }
+    await ctx.db.delete(args.id);
+    return {
+      id: args.id,
+      removedAt: Date.now(),
+    };
+  },
+});

@@ -15,6 +15,7 @@ No Slack. No MCP. No cloud embedding bill.
 - Find thoughts by meaning (`search`)
 - List recent notes (`recent`)
 - Show memory stats (`stats`)
+- Remove a thought by id (`remove`)
 
 ## Choose Your Install Mode
 
@@ -85,6 +86,7 @@ brain capture "your thought"
 brain search "your query"
 brain recent --limit 20
 brain stats
+brain remove "<thought_id>"
 ```
 
 ## 2) Local Server Mode (separate machine on your LAN)
@@ -180,6 +182,7 @@ npm run brain -- capture "your thought"
 npm run brain -- search "your query"
 npm run brain -- recent --limit 20
 npm run brain -- stats
+npm run brain -- remove "<thought_id>"
 ```
 
 ## API Endpoints
@@ -189,6 +192,7 @@ npm run brain -- stats
 - `GET /recent?limit=20`
 - `POST /capture`
 - `POST /search`
+- `POST /remove`
 
 ## More Docs
 
