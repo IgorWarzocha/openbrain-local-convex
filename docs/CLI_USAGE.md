@@ -49,6 +49,12 @@ npm run brain -- recent --limit 20
 npm run brain -- stats
 ```
 
+## Remove Thought
+
+```bash
+npm run brain -- remove "<thought_id>"
+```
+
 ## HTTP API
 
 - `GET /health`
@@ -56,6 +62,7 @@ npm run brain -- stats
 - `GET /recent?limit=20`
 - `POST /capture`
 - `POST /search`
+- `POST /remove`
 
 Example:
 
@@ -72,4 +79,13 @@ curl -s -X POST "http://192.168.0.113:8787/capture" \
   -H 'x-openbrain-key: <shared-secret>' \
   -H 'content-type: application/json' \
   -d '{"content":"note from api","source":"api","tags":["ops"]}'
+```
+
+Remove by id:
+
+```bash
+curl -s -X POST "http://192.168.0.113:8787/remove" \
+  -H 'x-openbrain-key: <shared-secret>' \
+  -H 'content-type: application/json' \
+  -d '{"id":"<thought_id>"}'
 ```

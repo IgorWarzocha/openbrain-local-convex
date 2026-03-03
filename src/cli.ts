@@ -5,6 +5,7 @@ import { captureThought } from "./commands/capture";
 import { searchThoughts } from "./commands/search";
 import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
+import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
 import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
 import {
@@ -12,6 +13,7 @@ import {
   remoteGetStats,
   remoteHealth,
   remoteListRecentThoughts,
+  remoteRemoveThought,
   remoteSearchThoughts,
 } from "./remoteApi";
 
@@ -89,6 +91,27 @@ program
     const cfg = getConfig();
     const result = cfg.mode === "remote" ? await remoteGetStats(cfg) : await getStats(cfg);
     console.log(JSON.stringify(result, null, 2));
+  });
+
+program
+  .command("remove")
+  .description("Remove a thought by id")
+  .argument("<thoughtId>", "Thought id")
+  .action(async (thoughtId) => {
+    const cfg = getConfig();
+    const result = cfg.mode === "remote" ? await remoteRemoveThought(cfg, { id: thoughtId }) : await removeThought(cfg, thoughtId);
+    console.log(
+      JSON.stringify(
+        {
+          ok: true,
+          thoughtId: result.id,
+          removedAt: new Date(result.removedAt).toISOString(),
+          mode: cfg.mode,
+        },
+        null,
+        2,
+      ),
+    );
   });
 
 program

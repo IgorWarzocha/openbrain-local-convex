@@ -43,6 +43,11 @@ export type HealthResult = {
   lmStudioEmbeddingDimensions: number;
 };
 
+export type RemoveResult = {
+  id: string;
+  removedAt: number;
+};
+
 export function buildRemoteUrl(
   baseUrl: string,
   path: string,
@@ -168,4 +173,16 @@ export async function remoteHealth(cfg: RemoteOpenBrainConfig): Promise<HealthRe
   return (await remoteRequest(cfg, "/health", {
     method: "GET",
   })) as HealthResult;
+}
+
+export async function remoteRemoveThought(
+  cfg: RemoteOpenBrainConfig,
+  input: { id: string },
+): Promise<RemoveResult> {
+  return (await remoteRequest(cfg, "/remove", {
+    method: "POST",
+    body: {
+      id: input.id,
+    },
+  })) as RemoveResult;
 }

@@ -6,6 +6,7 @@ import { captureThought } from "./commands/capture";
 import { getStats } from "./commands/stats";
 import { listRecentThoughts } from "./commands/recent";
 import { searchThoughts } from "./commands/search";
+import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
 import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
 
@@ -124,6 +125,18 @@ async function main() {
         const limit = parseLimit(body.limit, 8);
         const threshold = parseThreshold(body.threshold, 0.2);
         const result = await searchThoughts(cfg, { query, limit, threshold });
+        sendJson(res, 200, { ok: true, data: result });
+        return;
+      }
+
+      if (req.method === "POST" && url.pathname === "/remove") {
+        const body = await readJson(req);
+        const id = String(body.id ?? "").trim();
+        if (!id) {
+          sendJson(res, 400, { ok: false, error: "id is required" });
+          return;
+        }
+        const result = await removeThought(cfg, id);
         sendJson(res, 200, { ok: true, data: result });
         return;
       }
