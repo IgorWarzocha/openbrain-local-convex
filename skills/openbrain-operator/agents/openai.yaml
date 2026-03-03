@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenBrain Operator"
+  short_description: "Capture, search, and maintain OpenBrain memory"
+  default_prompt: "Use brain commands and the OpenBrain API to capture notes, search semantically, and troubleshoot memory retrieval issues."

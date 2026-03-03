@@ -1,0 +1,4 @@
+interface:
+  display_name: "OpenBrain Setup"
+  short_description: "Set up OpenBrain on localhost or a LAN server"
+  default_prompt: "Set up openbrain-local-convex in this cloned repo, validate health checks, and report any blockers."
