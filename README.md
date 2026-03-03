@@ -1,4 +1,7 @@
-# OpenBrain (Convex + LM Studio)
+# openbrain-local-convex
+
+> This project exists because Nate B. Jones shared the original “Build Your Open Brain” idea in a way that made people actually ship it.  
+> Big credit to Nate for the concept and teaching work: https://promptkit.natebjones.com/20260224_uq1_guide_main
 
 Personal second-brain memory you can run:
 1. On your own machine (`localhost`)
@@ -56,13 +59,13 @@ npm run health
 6. Start using it:
 
 ```bash
-npm run openbrain -- capture "Decided to move launch by one week" --tags planning,release
-npm run openbrain -- search "What did I say about launch timeline?"
+npm run brain -- capture "Decided to move launch by one week" --tags planning,release
+npm run brain -- search "What did I say about launch timeline?"
 ```
 
 ## 2) Local Server Mode (separate machine on your LAN)
 
-Use this when you want OpenBrain always on in your network.
+Use this when you want it always on in your network.
 
 ### Steps
 
@@ -100,10 +103,10 @@ ssh <host> "cd <remote_dir> && npm run health"
 ## Everyday Commands
 
 ```bash
-npm run openbrain -- capture "your thought"
-npm run openbrain -- search "your query"
-npm run openbrain -- recent --limit 20
-npm run openbrain -- stats
+npm run brain -- capture "your thought"
+npm run brain -- search "your query"
+npm run brain -- recent --limit 20
+npm run brain -- stats
 ```
 
 ## API Endpoints
@@ -114,19 +117,8 @@ npm run openbrain -- stats
 - `POST /capture`
 - `POST /search`
 
-## Credits
-
-This project is inspired by Nate B. Jones’ “Build Your Open Brain” guide and companion prompt work:
-- https://promptkit.natebjones.com/20260224_uq1_guide_main
-
-Attribution notes:
-- The guide explicitly states it is “Built by Nate B. Jones.”
-- Nate’s public profile positions him as an AI educator/analyst focused on practical AI workflows.
-
-This repository is an implementation variant (Convex + LM Studio, no Slack/MCP) based on that direction.
-
 ## More Docs
 
-- [Setup](/home/igorw/Frameworks/openbrain/docs/SETUP.md)
-- [CLI Usage](/home/igorw/Frameworks/openbrain/docs/CLI_USAGE.md)
-- [Troubleshooting](/home/igorw/Frameworks/openbrain/docs/TROUBLESHOOTING.md)
+- [Setup](./docs/SETUP.md)
+- [CLI Usage](./docs/CLI_USAGE.md)
+- [Troubleshooting](./docs/TROUBLESHOOTING.md)

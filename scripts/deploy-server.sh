@@ -2,7 +2,7 @@
 set -euo pipefail
 
 TARGET_HOST="${1:-192.168.0.113}"
-TARGET_DIR="${2:-$HOME/openbrain}"
+TARGET_DIR="${2:-$HOME/openbrain-local-convex}"
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

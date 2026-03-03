@@ -10,7 +10,10 @@ import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from ".
 
 const program = new Command();
 
-program.name("openbrain").description("Local 2nd brain CLI (Convex + LM Studio)").version("0.1.0");
+program
+  .name("openbrain-local-convex")
+  .description("Local 2nd brain CLI (Convex + LM Studio)")
+  .version("0.1.0");
 
 program
   .command("capture")

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-SESSION_NAME="${1:-openbrain}"
+SESSION_NAME="${1:-openbrain-local-convex}"
 LMSTUDIO_MODEL="${LMSTUDIO_EMBED_MODEL:-text-embedding-embeddinggemma-300m-qat}"
 
 if [ -f "$ROOT_DIR/.env" ]; then

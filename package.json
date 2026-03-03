@@ -1,15 +1,15 @@
 {
-  "name": "openbrain",
+  "name": "openbrain-local-convex",
   "version": "0.1.0",
   "description": "Local-first second brain using Convex + LM Studio embeddings (no MCP).",
   "main": "dist/src/server.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/openbrain.git"
+    "url": "https://github.com/your-org/openbrain-local-convex.git"
   },
-  "homepage": "https://github.com/your-org/openbrain",
+  "homepage": "https://github.com/your-org/openbrain-local-convex",
   "bugs": {
-    "url": "https://github.com/your-org/openbrain/issues"
+    "url": "https://github.com/your-org/openbrain-local-convex/issues"
   },
   "engines": {
     "node": ">=20"
@@ -20,6 +20,7 @@
   "scripts": {
     "convex:dev": "convex dev",
     "convex:once": "convex dev --once",
+    "brain": "tsx src/cli.ts",
     "openbrain": "tsx src/cli.ts",
     "start:api": "tsx src/server.ts",
     "build": "npm run clean && tsc -p tsconfig.json",
