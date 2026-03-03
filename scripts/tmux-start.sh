@@ -3,6 +3,19 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SESSION_NAME="${1:-openbrain}"
+LMSTUDIO_MODEL="${LMSTUDIO_EMBED_MODEL:-text-embedding-embeddinggemma-300m-qat}"
+
+if [ -f "$ROOT_DIR/.env" ]; then
+  model_from_env="$(grep -E '^LMSTUDIO_EMBED_MODEL=' "$ROOT_DIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$model_from_env" ]; then
+    LMSTUDIO_MODEL="$model_from_env"
+  fi
+fi
+
+command -v tmux >/dev/null 2>&1 || {
+  echo "tmux is required"
+  exit 1
+}
 
 if tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
   echo "tmux session '$SESSION_NAME' already exists"
@@ -19,7 +32,7 @@ tmux rename-window -t "$SESSION_NAME:1" api
 
 if [ -x "$HOME/.lmstudio/bin/lms" ]; then
   tmux new-window -t "$SESSION_NAME:2" -c "$ROOT_DIR"
-  tmux send-keys -t "$SESSION_NAME:2" "$HOME/.lmstudio/bin/lms daemon up && $HOME/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --yes && $HOME/.lmstudio/bin/lms server start" C-m
+  tmux send-keys -t "$SESSION_NAME:2" "$HOME/.lmstudio/bin/lms daemon up && $HOME/.lmstudio/bin/lms load $LMSTUDIO_MODEL --yes && $HOME/.lmstudio/bin/lms server start" C-m
   tmux rename-window -t "$SESSION_NAME:2" lmstudio
 fi
 

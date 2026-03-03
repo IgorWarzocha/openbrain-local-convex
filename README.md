@@ -1,54 +1,61 @@
-# OpenBrain (Convex + LM Studio, No MCP)
+# OpenBrain
 
-Local-first 2nd brain:
-- Convex stores thoughts and serves semantic search.
-- LM Studio (headless Vulkan) generates embeddings with `google/embeddinggemma-300m`.
-- Access through local CLI and optional local HTTP API.
+Local-first second brain stack:
+- Convex local deployment for storage/search.
+- LM Studio headless embeddings runtime.
+- Local CLI + HTTP API.
+- No Slack, no ChatGPT connector, no MCP.
 
-## Architecture
+## What You Get
 
-- `src/cli.ts`: capture/search/recent/stats commands.
-- `src/server.ts`: optional HTTP API (`/capture`, `/search`, `/recent`, `/stats`, `/health`).
-- `convex/brain.ts`: Convex mutation/query functions.
-- `convex/schema.ts`: Convex data model.
-
-Embeddings are generated client-side (CLI/API process), then sent to Convex.
+- `captureThought` / `searchThoughts` / `listRecentThoughts` / `getStats`
+- Semantic search over stored thoughts
+- Linux server deployment scripts (sync, bootstrap, systemd, tmux)
 
 ## Prerequisites
 
-- Node.js 20+
-- Convex CLI available via `npx convex ...`
-- LM Studio headless runtime (`lms`) installed and exposing OpenAI-compatible embeddings API
-- Access to `google/embeddinggemma-300m` in LM Studio (identifier usually `text-embedding-embeddinggemma-300m-qat`)
+- Node.js `>=20`
+- `ssh` and `rsync` (for remote deploy)
+- LM Studio headless runtime (`lms`) for embeddings
+- Embedding model available in LM Studio:
+  - target HF model family: `google/embeddinggemma-300m`
+  - typical LM Studio loaded identifier: `text-embedding-embeddinggemma-300m-qat`
 
-## Quick Start (Local)
+## Quick Start (Local, Deterministic)
 
 1. Install dependencies:
 
 ```bash
-npm install
+npm ci
 ```
 
-2. Initialize local Convex deployment and codegen:
+2. Bootstrap Convex local deployment (interactive on first run):
 
 ```bash
-npx convex dev --once
+npx convex dev --configure new --dev-deployment local --once
 ```
 
-3. Configure LM Studio values:
+3. Configure env:
 
 ```bash
 cp .env.example .env
-# edit .env if needed
 ```
 
-4. Health check:
+4. Start LM Studio runtime and model:
+
+```bash
+~/.lmstudio/bin/lms daemon up
+~/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --yes
+~/.lmstudio/bin/lms server start
+```
+
+5. Validate:
 
 ```bash
 npm run health
 ```
 
-5. Capture and search:
+6. Use CLI:
 
 ```bash
 npm run openbrain -- capture "Decided to move launch by one week" --tags planning,release
@@ -57,67 +64,69 @@ npm run openbrain -- recent --limit 10
 npm run openbrain -- stats
 ```
 
-## HTTP API
+## Server Deploy
 
-Run:
-
-```bash
-npm run start:api
-```
-
-Endpoints:
-- `GET /health`
-- `GET /stats`
-- `GET /recent?limit=20`
-- `POST /capture` with `{ "content": "...", "tags": ["..."], "source": "api" }`
-- `POST /search` with `{ "query": "...", "limit": 8, "threshold": 0.2 }`
-
-Example:
+1. Sync code and install deps:
 
 ```bash
-curl -s -X POST http://127.0.0.1:8787/capture \
-  -H 'content-type: application/json' \
-  -d '{"content":"Remember: Marcus wants platform team transfer","source":"api"}' | jq
+bash scripts/deploy-server.sh <host> <remote_dir>
 ```
 
-## Run Persistently on Server (192.168.0.113)
-
-From your workstation:
+2. Run one-time interactive Convex bootstrap on server:
 
 ```bash
-bash scripts/deploy-server.sh 192.168.0.113 ~/openbrain
+bash scripts/bootstrap-server-interactive.sh <host> <remote_dir>
 ```
 
-On the server:
+3. Install LM Studio headless runtime + model on server:
 
 ```bash
-cd ~/openbrain
-# install lms/llmster once (headless runtime)
-curl -fsSL https://lmstudio.ai/install.sh | bash
-# download embedding model once
-~/.lmstudio/bin/lms get embeddinggemma -n 20 -y
-# install and start user services
-bash scripts/install-systemd-user-services.sh
+ssh <host> "curl -fsSL https://lmstudio.ai/install.sh | bash"
+ssh <host> "~/.lmstudio/bin/lms get embeddinggemma -n 20 -y"
 ```
 
-Service status:
+4. Install and start services:
 
 ```bash
-systemctl --user status lmstudio.service convex-local.service openbrain-api.service
-journalctl --user -u lmstudio.service -u convex-local.service -u openbrain-api.service -f
+ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ```
 
-## tmux Option
+5. Verify:
 
-If you prefer tmux over systemd:
+```bash
+ssh <host> "cd <remote_dir> && npm run health"
+```
+
+## Service Lifecycle
+
+```bash
+bash scripts/services.sh install
+bash scripts/services.sh status
+bash scripts/services.sh logs
+bash scripts/services.sh restart
+bash scripts/services.sh stop
+bash scripts/services.sh uninstall
+```
+
+## Optional tmux Runtime
 
 ```bash
 bash scripts/tmux-start.sh openbrain
 tmux attach -t openbrain
 ```
 
-## Notes
+## Quality Gates
 
-- First saved thought locks embedding dimension implicitly; later writes must match.
-- If LM Studio model output dimension changes, clear/rebuild thought data.
-- No Slack, no ChatGPT web connector, no MCP.
+```bash
+npm run typecheck
+npm run test
+npm run check
+```
+
+## Docs
+
+- [Setup](/home/igorw/Frameworks/openbrain/docs/SETUP.md)
+- [CLI Usage](/home/igorw/Frameworks/openbrain/docs/CLI_USAGE.md)
+- [Troubleshooting](/home/igorw/Frameworks/openbrain/docs/TROUBLESHOOTING.md)
+- [Credential Template](/home/igorw/Frameworks/openbrain/docs/CREDENTIAL_TRACKER_TEMPLATE.md)
+- [Lane Map](/home/igorw/Frameworks/openbrain/docs/LANE_MAP.md)

@@ -1,0 +1,50 @@
+# CLI Usage
+
+Run all commands from repository root.
+
+## Health
+
+```bash
+npm run health
+```
+
+## Capture
+
+```bash
+npm run openbrain -- capture "Your thought here" --source cli --tags planning,idea
+```
+
+## Semantic Search
+
+```bash
+npm run openbrain -- search "what did I write about launch risk?" --limit 8 --threshold 0.2
+```
+
+## Recent Thoughts
+
+```bash
+npm run openbrain -- recent --limit 20
+```
+
+## Stats
+
+```bash
+npm run openbrain -- stats
+```
+
+## HTTP API
+
+- `GET /health`
+- `GET /stats`
+- `GET /recent?limit=20`
+- `POST /capture`
+- `POST /search`
+
+Example:
+
+```bash
+curl -s -X POST http://127.0.0.1:8787/capture \
+  -H 'content-type: application/json' \
+  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+```
+

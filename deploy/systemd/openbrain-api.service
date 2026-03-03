@@ -5,7 +5,7 @@ After=network.target convex-local.service lmstudio.service
 [Service]
 Type=simple
 WorkingDirectory=%h/openbrain
-ExecStart=/usr/bin/env bash -lc 'cd %h/openbrain && set -a && [ -f .env.local ] && . ./.env.local || true && [ -f .env ] && . ./.env || true && set +a && npm run start:api'
+ExecStart=/usr/bin/env bash -lc 'set -euo pipefail; cd %h/openbrain; if [ ! -f .env.local ]; then echo ".env.local missing. Run Convex bootstrap first." >&2; exit 1; fi; set -a; . ./.env.local; if [ -f .env ]; then . ./.env; fi; set +a; npm run start:api'
 Restart=always
 RestartSec=2
 

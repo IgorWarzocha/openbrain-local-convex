@@ -6,6 +6,7 @@ import { getStats } from "./commands/stats";
 import { listRecentThoughts } from "./commands/recent";
 import { searchThoughts } from "./commands/search";
 import { checkLmStudioHealth } from "./lmstudio";
+import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
 
 type JsonObject = Record<string, unknown>;
 
@@ -59,7 +60,7 @@ async function main() {
       }
 
       if (req.method === "GET" && url.pathname === "/recent") {
-        const limit = Number.parseInt(url.searchParams.get("limit") ?? "20", 10);
+        const limit = parseLimit(url.searchParams.get("limit") ?? undefined, 20);
         sendJson(res, 200, { ok: true, data: await listRecentThoughts(cfg, limit) });
         return;
       }
@@ -71,10 +72,8 @@ async function main() {
           sendJson(res, 400, { ok: false, error: "content is required" });
           return;
         }
-        const tags = Array.isArray(body.tags)
-          ? body.tags.map((tag) => String(tag).trim()).filter(Boolean)
-          : [];
-        const source = String(body.source ?? "api") as "cli" | "manual" | "api";
+        const tags = normalizeTags(body.tags);
+        const source = parseThoughtSource(body.source, "api");
         const result = await captureThought(cfg, { content, tags, source });
         sendJson(res, 200, { ok: true, data: result });
         return;
@@ -87,8 +86,8 @@ async function main() {
           sendJson(res, 400, { ok: false, error: "query is required" });
           return;
         }
-        const limit = Number.parseInt(String(body.limit ?? "8"), 10);
-        const threshold = Number.parseFloat(String(body.threshold ?? "0.2"));
+        const limit = parseLimit(body.limit, 8);
+        const threshold = parseThreshold(body.threshold, 0.2);
         const result = await searchThoughts(cfg, { query, limit, threshold });
         sendJson(res, 200, { ok: true, data: result });
         return;
@@ -113,4 +112,3 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
-

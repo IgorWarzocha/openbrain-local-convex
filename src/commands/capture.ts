@@ -1,12 +1,13 @@
 import { embedText } from "../lmstudio";
 import { api, createConvexClient } from "../convexClient";
 import type { OpenBrainConfig } from "../config";
+import type { ThoughtSource } from "../domain/inputs";
 
 export async function captureThought(
   cfg: OpenBrainConfig,
   input: {
     content: string;
-    source?: "cli" | "manual" | "api";
+    source?: ThoughtSource;
     tags?: string[];
   },
 ) {
@@ -19,4 +20,3 @@ export async function captureThought(
     tags: input.tags ?? [],
   });
 }
-

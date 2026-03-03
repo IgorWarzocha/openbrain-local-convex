@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenBrain Convex Local Deployment
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__WORKDIR__
+ExecStart=/usr/bin/env bash -lc 'cd __WORKDIR__ && npx convex dev --tail-logs disable'
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target
+

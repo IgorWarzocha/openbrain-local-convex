@@ -1,8 +1,19 @@
 {
   "name": "openbrain",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Local-first second brain using Convex + LM Studio embeddings (no MCP).",
+  "main": "dist/src/server.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/openbrain.git"
+  },
+  "homepage": "https://github.com/your-org/openbrain",
+  "bugs": {
+    "url": "https://github.com/your-org/openbrain/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
   "directories": {
     "doc": "docs"
   },
@@ -11,15 +22,26 @@
     "convex:once": "convex dev --once",
     "openbrain": "tsx src/cli.ts",
     "start:api": "tsx src/server.ts",
+    "build": "npm run clean && tsc -p tsconfig.json",
+    "clean": "rm -rf dist",
     "health": "tsx src/cli.ts health",
     "typecheck": "tsc --noEmit",
+    "test": "tsx --test tests/**/*.test.ts",
+    "check": "npm run typecheck && npm run test",
     "bootstrap": "bash scripts/bootstrap-local.sh",
-    "tmux:start": "bash scripts/tmux-start.sh"
+    "tmux:start": "bash scripts/tmux-start.sh",
+    "services": "bash scripts/services.sh status"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "convex",
+    "lmstudio",
+    "embeddings",
+    "semantic-search",
+    "second-brain"
+  ],
+  "author": "OpenBrain Contributors",
+  "license": "MIT",
+  "type": "module",
   "dependencies": {
     "commander": "^14.0.3",
     "convex": "^1.32.0",

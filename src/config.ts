@@ -1,9 +1,6 @@
 import { config as loadEnv } from "dotenv";
 import { z } from "zod";
 
-loadEnv({ path: ".env" });
-loadEnv({ path: ".env.local", override: true });
-
 const EnvironmentSchema = z.object({
   CONVEX_URL: z.string().url().optional(),
   LMSTUDIO_BASE_URL: z.string().url().default("http://127.0.0.1:1234/v1"),
@@ -24,8 +21,14 @@ export type OpenBrainConfig = {
   apiPort: number;
 };
 
-export function getConfig(): OpenBrainConfig {
-  const parsed = EnvironmentSchema.safeParse(process.env);
+export function loadEnvironment(): void {
+  // Priority order: .env then .env.local overrides.
+  loadEnv({ path: ".env", quiet: true });
+  loadEnv({ path: ".env.local", override: true, quiet: true });
+}
+
+export function parseEnvironment(env: NodeJS.ProcessEnv): OpenBrainConfig {
+  const parsed = EnvironmentSchema.safeParse(env);
   if (!parsed.success) {
     throw new Error(`Invalid environment: ${parsed.error.message}`);
   }
@@ -44,4 +47,9 @@ export function getConfig(): OpenBrainConfig {
     apiHost: OPENBRAIN_API_HOST,
     apiPort: OPENBRAIN_API_PORT,
   };
+}
+
+export function getConfig(): OpenBrainConfig {
+  loadEnvironment();
+  return parseEnvironment(process.env);
 }

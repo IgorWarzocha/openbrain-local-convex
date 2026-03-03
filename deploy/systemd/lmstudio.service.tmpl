@@ -1,0 +1,18 @@
+[Unit]
+Description=LM Studio headless daemon and API server
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+Environment="PATH=__USER_HOME__/.lmstudio/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="LMSTUDIO_MODEL=__LMSTUDIO_MODEL__"
+ExecStart=__LMSTUDIO_BIN__ daemon up
+ExecStart=__LMSTUDIO_BIN__ load ${LMSTUDIO_MODEL} --yes
+ExecStart=__LMSTUDIO_BIN__ server start
+ExecStop=__LMSTUDIO_BIN__ server stop
+ExecStop=__LMSTUDIO_BIN__ daemon down
+
+[Install]
+WantedBy=default.target
+

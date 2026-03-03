@@ -6,6 +6,7 @@ import { searchThoughts } from "./commands/search";
 import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { checkLmStudioHealth } from "./lmstudio";
+import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
 
 const program = new Command();
 
@@ -19,14 +20,10 @@ program
   .option("--tags <tags>", "Comma-separated tags", "")
   .action(async (content, options) => {
     const cfg = getConfig();
-    const tags = String(options.tags)
-      .split(",")
-      .map((tag) => tag.trim())
-      .filter(Boolean);
     const result = await captureThought(cfg, {
       content,
-      source: options.source,
-      tags,
+      source: parseThoughtSource(options.source, "cli"),
+      tags: normalizeTags(options.tags),
     });
     console.log(
       JSON.stringify(
@@ -52,8 +49,8 @@ program
     const cfg = getConfig();
     const result = await searchThoughts(cfg, {
       query,
-      limit: Number.parseInt(String(options.limit), 10),
-      threshold: Number.parseFloat(String(options.threshold)),
+      limit: parseLimit(options.limit, 8),
+      threshold: parseThreshold(options.threshold, 0.2),
     });
     console.log(JSON.stringify(result, null, 2));
   });
@@ -64,7 +61,7 @@ program
   .option("--limit <limit>", "Result limit", "20")
   .action(async (options) => {
     const cfg = getConfig();
-    const result = await listRecentThoughts(cfg, Number.parseInt(String(options.limit), 10));
+    const result = await listRecentThoughts(cfg, parseLimit(options.limit, 20));
     console.log(JSON.stringify(result, null, 2));
   });
 
@@ -104,4 +101,3 @@ program.parseAsync(process.argv).catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
-
