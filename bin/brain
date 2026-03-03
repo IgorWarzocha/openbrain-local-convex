@@ -1,7 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve symlinks so global links (e.g. ~/.local/bin/brain) map back to repo path.
+SOURCE="${BASH_SOURCE[0]}"
+while [ -L "$SOURCE" ]; do
+  SOURCE_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+  LINK_TARGET="$(readlink "$SOURCE")"
+  if [[ "$LINK_TARGET" != /* ]]; then
+    SOURCE="$SOURCE_DIR/$LINK_TARGET"
+  else
+    SOURCE="$LINK_TARGET"
+  fi
+done
+
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # Ensure config loading always resolves project .env/.env.local,
@@ -9,4 +21,3 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_DIR"
 
 exec node "$PROJECT_DIR/node_modules/tsx/dist/cli.mjs" "$PROJECT_DIR/src/cli.ts" "$@"
-

@@ -24,6 +24,7 @@ rsync -az --delete \
   --exclude '.git' \
   --exclude 'node_modules' \
   --exclude '.convex' \
+  --exclude '.env' \
   --exclude '.env.local' \
   "$ROOT_DIR/" "$TARGET_HOST:$TARGET_DIR/"
 
