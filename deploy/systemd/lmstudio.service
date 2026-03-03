@@ -7,12 +7,16 @@ Type=oneshot
 RemainAfterExit=yes
 Environment="PATH=%h/.lmstudio/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 Environment="LMSTUDIO_MODEL=text-embedding-embeddinggemma-300m-qat"
+Environment="LMSTUDIO_RUNTIME_ALIAS=llama.cpp-linux-x86_64-vulkan-avx2"
+Environment="LMSTUDIO_GPU_OFFLOAD=max"
+Environment="LMSTUDIO_REQUIRE_VULKAN=1"
 ExecStart=%h/.lmstudio/bin/lms daemon up
-ExecStart=%h/.lmstudio/bin/lms load ${LMSTUDIO_MODEL} --yes
+ExecStart=%h/.lmstudio/bin/lms runtime select ${LMSTUDIO_RUNTIME_ALIAS}
+ExecStart=%h/.lmstudio/bin/lms load ${LMSTUDIO_MODEL} --gpu ${LMSTUDIO_GPU_OFFLOAD} --yes
 ExecStart=%h/.lmstudio/bin/lms server start
+ExecStartPost=/usr/bin/env bash -lc 'if [ "${LMSTUDIO_REQUIRE_VULKAN}" = "1" ]; then %h/.lmstudio/bin/lms runtime survey | grep -qi "Survey by .*vulkan"; fi'
 ExecStop=%h/.lmstudio/bin/lms server stop
 ExecStop=%h/.lmstudio/bin/lms daemon down
 
 [Install]
 WantedBy=default.target
-

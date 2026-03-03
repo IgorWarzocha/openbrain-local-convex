@@ -58,10 +58,30 @@ Fix:
 
 ```bash
 ~/.lmstudio/bin/lms ps
-~/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --yes
+~/.lmstudio/bin/lms runtime select llama.cpp-linux-x86_64-vulkan-avx2
+~/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --gpu max --yes
 ```
 
 Update `.env` if required.
+
+## LM Studio does not use Vulkan
+
+Cause:
+- A non-Vulkan runtime is selected or GPU offload is disabled.
+
+Fix:
+
+```bash
+~/.lmstudio/bin/lms runtime ls
+~/.lmstudio/bin/lms runtime select llama.cpp-linux-x86_64-vulkan-avx2
+~/.lmstudio/bin/lms runtime survey
+```
+
+If you use systemd services, reinstall units so Vulkan enforcement is rendered into unit files:
+
+```bash
+bash scripts/services.sh install
+```
 
 ## Convex service port conflict (`3210`)
 

@@ -24,7 +24,8 @@ cp .env.example .env
 
 ```bash
 ~/.lmstudio/bin/lms daemon up
-~/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --yes
+~/.lmstudio/bin/lms runtime select llama.cpp-linux-x86_64-vulkan-avx2
+~/.lmstudio/bin/lms load text-embedding-embeddinggemma-300m-qat --gpu max --yes
 ~/.lmstudio/bin/lms server start
 ```
 

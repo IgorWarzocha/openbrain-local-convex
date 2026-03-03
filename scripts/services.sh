@@ -7,12 +7,28 @@ WORKDIR="${OPENBRAIN_WORKDIR:-$ROOT_DIR}"
 LMSTUDIO_BIN="${LMSTUDIO_BIN:-$HOME/.lmstudio/bin/lms}"
 DEFAULT_MODEL="text-embedding-embeddinggemma-300m-qat"
 LMSTUDIO_MODEL="${LMSTUDIO_MODEL:-$DEFAULT_MODEL}"
+DEFAULT_RUNTIME_ALIAS="llama.cpp-linux-x86_64-vulkan-avx2"
+LMSTUDIO_RUNTIME_ALIAS="${LMSTUDIO_RUNTIME_ALIAS:-$DEFAULT_RUNTIME_ALIAS}"
+LMSTUDIO_GPU_OFFLOAD="${LMSTUDIO_GPU_OFFLOAD:-max}"
+LMSTUDIO_REQUIRE_VULKAN="${LMSTUDIO_REQUIRE_VULKAN:-1}"
 
 if [ -f "$WORKDIR/.env" ]; then
   # Optional override from .env.
   model_from_env="$(grep -E '^LMSTUDIO_EMBED_MODEL=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
   if [ -n "$model_from_env" ]; then
     LMSTUDIO_MODEL="$model_from_env"
+  fi
+  runtime_from_env="$(grep -E '^LMSTUDIO_RUNTIME_ALIAS=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$runtime_from_env" ]; then
+    LMSTUDIO_RUNTIME_ALIAS="$runtime_from_env"
+  fi
+  gpu_from_env="$(grep -E '^LMSTUDIO_GPU_OFFLOAD=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$gpu_from_env" ]; then
+    LMSTUDIO_GPU_OFFLOAD="$gpu_from_env"
+  fi
+  require_vulkan_from_env="$(grep -E '^LMSTUDIO_REQUIRE_VULKAN=' "$WORKDIR/.env" | tail -n1 | cut -d'=' -f2- || true)"
+  if [ -n "$require_vulkan_from_env" ]; then
+    LMSTUDIO_REQUIRE_VULKAN="$require_vulkan_from_env"
   fi
 fi
 
@@ -38,16 +54,22 @@ escape_sed_replacement() {
 render_template() {
   local template="$1"
   local output="$2"
-  local escaped_workdir escaped_home escaped_lms_bin escaped_model
+  local escaped_workdir escaped_home escaped_lms_bin escaped_model escaped_runtime_alias escaped_gpu_offload escaped_require_vulkan
   escaped_workdir="$(escape_sed_replacement "$WORKDIR")"
   escaped_home="$(escape_sed_replacement "$HOME")"
   escaped_lms_bin="$(escape_sed_replacement "$LMSTUDIO_BIN")"
   escaped_model="$(escape_sed_replacement "$LMSTUDIO_MODEL")"
+  escaped_runtime_alias="$(escape_sed_replacement "$LMSTUDIO_RUNTIME_ALIAS")"
+  escaped_gpu_offload="$(escape_sed_replacement "$LMSTUDIO_GPU_OFFLOAD")"
+  escaped_require_vulkan="$(escape_sed_replacement "$LMSTUDIO_REQUIRE_VULKAN")"
   sed \
     -e "s/__WORKDIR__/${escaped_workdir}/g" \
     -e "s/__USER_HOME__/${escaped_home}/g" \
     -e "s/__LMSTUDIO_BIN__/${escaped_lms_bin}/g" \
     -e "s/__LMSTUDIO_MODEL__/${escaped_model}/g" \
+    -e "s/__LMSTUDIO_RUNTIME_ALIAS__/${escaped_runtime_alias}/g" \
+    -e "s/__LMSTUDIO_GPU_OFFLOAD__/${escaped_gpu_offload}/g" \
+    -e "s/__LMSTUDIO_REQUIRE_VULKAN__/${escaped_require_vulkan}/g" \
     "$template" >"$output"
 }
 
@@ -65,6 +87,27 @@ preflight() {
       log "warning: loginctl linger is not enabled for $USER (services may stop after logout)"
     fi
   fi
+  case "$LMSTUDIO_GPU_OFFLOAD" in
+    off|max) ;;
+    *)
+      if ! [[ "$LMSTUDIO_GPU_OFFLOAD" =~ ^0(\.[0-9]+)?$|^1(\.0+)?$ ]]; then
+        die "LMSTUDIO_GPU_OFFLOAD must be 'off', 'max', or a value between 0 and 1"
+      fi
+      ;;
+  esac
+  case "$LMSTUDIO_REQUIRE_VULKAN" in
+    0|1) ;;
+    *)
+      die "LMSTUDIO_REQUIRE_VULKAN must be 0 or 1"
+      ;;
+  esac
+  if ! "$LMSTUDIO_BIN" runtime ls | grep -Fq "$LMSTUDIO_RUNTIME_ALIAS"; then
+    die "LM Studio runtime alias not installed: $LMSTUDIO_RUNTIME_ALIAS"
+  fi
+  if [ "$LMSTUDIO_REQUIRE_VULKAN" = "1" ] && [[ "$LMSTUDIO_RUNTIME_ALIAS" != *vulkan* ]]; then
+    die "Vulkan enforcement is enabled but runtime alias is not Vulkan: $LMSTUDIO_RUNTIME_ALIAS"
+  fi
+  log "LM Studio runtime alias: $LMSTUDIO_RUNTIME_ALIAS (gpu offload: $LMSTUDIO_GPU_OFFLOAD)"
 }
 
 install_units() {
@@ -137,4 +180,3 @@ case "$command" in
     die "unknown command '$command' (expected: install|start|stop|restart|status|logs|uninstall)"
     ;;
 esac
-
