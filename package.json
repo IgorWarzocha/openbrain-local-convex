@@ -9,11 +9,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/your-org/openbrain-local-convex.git"
+    "url": "https://github.com/IgorWarzocha/openbrain-local-convex.git"
   },
-  "homepage": "https://github.com/your-org/openbrain-local-convex",
+  "homepage": "https://github.com/IgorWarzocha/openbrain-local-convex",
   "bugs": {
-    "url": "https://github.com/your-org/openbrain-local-convex/issues"
+    "url": "https://github.com/IgorWarzocha/openbrain-local-convex/issues"
   },
   "engines": {
     "node": ">=20"
