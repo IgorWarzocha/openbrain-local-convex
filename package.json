@@ -1,0 +1,34 @@
+{
+  "name": "openbrain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "convex:dev": "convex dev",
+    "convex:once": "convex dev --once",
+    "openbrain": "tsx src/cli.ts",
+    "start:api": "tsx src/server.ts",
+    "health": "tsx src/cli.ts health",
+    "typecheck": "tsc --noEmit",
+    "bootstrap": "bash scripts/bootstrap-local.sh",
+    "tmux:start": "bash scripts/tmux-start.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "convex": "^1.32.0",
+    "dotenv": "^17.3.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}

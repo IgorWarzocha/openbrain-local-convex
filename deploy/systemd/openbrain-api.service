@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenBrain API (Convex + LM Studio)
+After=network.target convex-local.service lmstudio.service
+
+[Service]
+Type=simple
+WorkingDirectory=%h/openbrain
+ExecStart=/usr/bin/env bash -lc 'cd %h/openbrain && set -a && [ -f .env.local ] && . ./.env.local || true && [ -f .env ] && . ./.env || true && set +a && npm run start:api'
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=default.target
