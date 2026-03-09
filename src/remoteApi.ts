@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { RemoteOpenBrainConfig } from "./config";
-import type { ThoughtSource } from "./domain/inputs";
 import type { PresentedThought } from "./presenters";
 
 const ApiEnvelopeSchema = z.object({
@@ -38,7 +37,7 @@ export type HealthResult = {
 };
 
 export type RemoveResult = {
-  removedAt: number;
+  removedAt: string;
   removed: PresentedThought;
 };
 
@@ -119,13 +118,12 @@ async function remoteRequest(
 
 export async function remoteCaptureThought(
   cfg: RemoteOpenBrainConfig,
-  input: { content: string; source?: ThoughtSource; tags?: string[] },
+  input: { content: string; tags?: string[] },
 ): Promise<CaptureResult> {
   return (await remoteRequest(cfg, "/capture", {
     method: "POST",
     body: {
       content: input.content,
-      source: input.source,
       tags: input.tags,
     },
   })) as CaptureResult;

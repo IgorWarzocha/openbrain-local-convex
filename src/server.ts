@@ -8,7 +8,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { searchThoughts } from "./commands/search";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
+import { normalizeTags, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
 
 type JsonObject = Record<string, unknown>;
 
@@ -107,9 +107,12 @@ async function main() {
           sendJson(res, 400, { ok: false, error: "content is required" });
           return;
         }
+        if (body.source !== undefined) {
+          sendJson(res, 400, { ok: false, error: "source is no longer supported" });
+          return;
+        }
         const tags = normalizeTags(body.tags);
-        const source = parseThoughtSource(body.source, "api");
-        const result = await captureThought(cfg, { content, tags, source });
+        const result = await captureThought(cfg, { content, tags });
         sendJson(res, 200, { ok: true, data: result });
         return;
       }
@@ -153,7 +156,7 @@ async function main() {
           const threshold = parseThreshold(thresholdRaw, 0.35);
           result = await removeThought(cfg, { query, threshold });
         } else {
-          const recent = parseLimit(recentRaw, 1);
+          const recent = parseRecent(recentRaw);
           result = await removeThought(cfg, { recent });
         }
         sendJson(res, 200, { ok: true, data: result });

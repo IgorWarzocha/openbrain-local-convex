@@ -58,7 +58,7 @@ Health must return JSON containing:
 Capture:
 
 ```bash
-brain capture "Decided to delay launch for QA blockers" --source cli --tags planning,qa
+brain capture "Decided to delay launch for QA blockers" --tags planning,qa
 ```
 
 Search:

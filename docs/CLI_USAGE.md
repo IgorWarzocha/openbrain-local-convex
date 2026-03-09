@@ -28,7 +28,7 @@ npm run health
 ## Capture
 
 ```bash
-npm run brain -- capture "Your thought here" --source cli --tags planning,idea
+npm run brain -- capture "Your thought here" --tags planning,idea
 ```
 
 ## Semantic Search
@@ -71,7 +71,7 @@ Example:
 ```bash
 curl -s -X POST http://127.0.0.1:8787/capture \
   -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+  -d '{"content":"note from api","tags":["ops"]}'
 ```
 
 With key auth enabled on server:
@@ -80,7 +80,7 @@ With key auth enabled on server:
 curl -s -X POST "http://192.168.0.113:8787/capture" \
   -H 'x-openbrain-key: <shared-secret>' \
   -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+  -d '{"content":"note from api","tags":["ops"]}'
 ```
 
 Remove by recent position:

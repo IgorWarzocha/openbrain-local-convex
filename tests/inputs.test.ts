@@ -5,18 +5,11 @@ import {
   parseLimit,
   parseRecent,
   parseThreshold,
-  parseThoughtSource,
 } from "../src/domain/inputs";
 
 test("normalizeTags deduplicates and trims string input", () => {
   const tags = normalizeTags(" alpha, beta,alpha , ,gamma ");
   assert.deepEqual(tags, ["alpha", "beta", "gamma"]);
-});
-
-test("parseThoughtSource validates source values", () => {
-  assert.equal(parseThoughtSource("cli"), "cli");
-  assert.equal(parseThoughtSource(undefined, "manual"), "manual");
-  assert.throws(() => parseThoughtSource("desktop"), /invalid source/);
 });
 
 test("parseLimit and parseThreshold enforce valid ranges", () => {

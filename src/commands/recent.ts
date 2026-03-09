@@ -7,8 +7,6 @@ export async function listRecentThoughts(cfg: LocalOpenBrainConfig, limit?: numb
     return (await client.query(api.brain.listRecentThoughts, {})) as {
       thoughts: Array<{
         content: string;
-        tags: string[];
-        source: "cli" | "manual" | "api";
         createdAt: string;
       }>;
     };
@@ -16,8 +14,6 @@ export async function listRecentThoughts(cfg: LocalOpenBrainConfig, limit?: numb
   return (await client.query(api.brain.listRecentThoughts, { limit })) as {
     thoughts: Array<{
       content: string;
-      tags: string[];
-      source: "cli" | "manual" | "api";
       createdAt: string;
     }>;
   };

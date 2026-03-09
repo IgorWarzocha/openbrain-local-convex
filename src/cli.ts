@@ -7,7 +7,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseRecent, parseThreshold, parseThoughtSource } from "./domain/inputs";
+import { normalizeTags, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
 import {
   remoteCaptureThought,
   remoteGetStats,
@@ -28,16 +28,14 @@ program
   .command("capture")
   .description("Capture a thought")
   .argument("<content>", "Thought content")
-  .option("--source <source>", "Source label: cli|manual|api", "cli")
   .option("--tags <tags>", "Comma-separated tags", "")
   .action(async (content, options) => {
     const cfg = getConfig();
-    const source = parseThoughtSource(options.source, "cli");
     const tags = normalizeTags(options.tags);
     const result =
       cfg.mode === "remote"
-        ? await remoteCaptureThought(cfg, { content, source, tags })
-        : await captureThought(cfg, { content, source, tags });
+        ? await remoteCaptureThought(cfg, { content, tags })
+        : await captureThought(cfg, { content, tags });
     console.log(JSON.stringify({ ok: true, mode: cfg.mode, ...result }, null, 2));
   });
 
@@ -115,7 +113,7 @@ program
         {
           ok: true,
           mode: cfg.mode,
-          removedAt: new Date(result.removedAt).toISOString(),
+          removedAt: result.removedAt,
           removed: result.removed,
         },
         null,

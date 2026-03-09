@@ -1,8 +1,3 @@
-import { z } from "zod";
-
-export const ThoughtSourceSchema = z.enum(["cli", "manual", "api"]);
-export type ThoughtSource = z.infer<typeof ThoughtSourceSchema>;
-
 function asFiniteNumber(value: unknown): number {
   if (typeof value === "number") {
     return value;
@@ -11,17 +6,6 @@ function asFiniteNumber(value: unknown): number {
     return Number(value);
   }
   return Number.NaN;
-}
-
-export function parseThoughtSource(value: unknown, fallback: ThoughtSource = "api"): ThoughtSource {
-  if (value === undefined || value === null || value === "") {
-    return fallback;
-  }
-  const parsed = ThoughtSourceSchema.safeParse(String(value));
-  if (!parsed.success) {
-    throw new Error(`invalid source '${String(value)}', expected one of: cli, manual, api`);
-  }
-  return parsed.data;
 }
 
 export function normalizeTags(value: unknown): string[] {

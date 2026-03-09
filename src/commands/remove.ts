@@ -2,6 +2,7 @@ import { embedText } from "../lmstudio";
 import { api, createConvexClient } from "../convexClient";
 import type { LocalOpenBrainConfig } from "../config";
 import type { PresentedThought } from "../presenters";
+import { toDisplayDate } from "../presenters";
 import type { Id } from "../../convex/_generated/dataModel";
 
 type RemovalCandidate = PresentedThought & {
@@ -33,7 +34,7 @@ export type RemoveThoughtInput =
     };
 
 export type RemoveThoughtResult = {
-  removedAt: number;
+  removedAt: string;
   removed: PresentedThought;
 };
 
@@ -102,11 +103,9 @@ export async function removeThought(
   }) as { removedAt: number };
 
   return {
-    removedAt: result.removedAt,
+    removedAt: toDisplayDate(result.removedAt),
     removed: {
       content: target.content,
-      tags: target.tags,
-      source: target.source,
       createdAt: target.createdAt,
     },
   };

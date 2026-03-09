@@ -6,8 +6,6 @@ type RankedThought = {
   _id: string;
   _creationTime: number;
   content: string;
-  tags: string[];
-  source: "cli" | "manual" | "api";
   score: number;
 };
 
@@ -16,7 +14,6 @@ type StoredThought = {
   _creationTime: number;
   content: string;
   tags: string[];
-  source: "cli" | "manual" | "api";
   embedding: number[];
   createdAt: number;
 };
@@ -57,8 +54,6 @@ function rankThoughts(
         _id: thought._id,
         _creationTime: thought._creationTime,
         content: thought.content,
-        tags: thought.tags,
-        source: thought.source,
         score: cosineSimilarity(queryEmbedding, thought.embedding),
       }),
     )
@@ -72,7 +67,6 @@ export const captureThought = mutation({
     content: v.string(),
     embedding: v.array(v.number()),
     tags: v.optional(v.array(v.string())),
-    source: v.optional(v.union(v.literal("cli"), v.literal("manual"), v.literal("api"))),
   },
   handler: async (ctx, args) => {
     const content = args.content.trim();
@@ -95,7 +89,6 @@ export const captureThought = mutation({
       content,
       embedding: args.embedding,
       tags: Array.from(new Set((args.tags ?? []).map((tag) => tag.trim()).filter(Boolean))),
-      source: args.source ?? "cli",
       createdAt,
     });
 

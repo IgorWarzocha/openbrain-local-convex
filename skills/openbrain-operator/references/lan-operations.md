@@ -40,7 +40,7 @@ curl -fsS http://<server-ip>:8787/health -H "x-openbrain-key: <shared-secret>"
 Capture:
 
 ```bash
-brain capture "LAN memory write test" --source cli --tags lan,ops
+brain capture "LAN memory write test" --tags lan,ops
 ```
 
 Search:
@@ -76,7 +76,7 @@ Capture via API:
 ```bash
 curl -sS -X POST http://<server-ip>:8787/capture \
   -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+  -d '{"content":"note from api","tags":["ops"]}'
 ```
 
 Capture via API with key:
@@ -85,7 +85,7 @@ Capture via API with key:
 curl -sS -X POST http://<server-ip>:8787/capture \
   -H 'x-openbrain-key: <shared-secret>' \
   -H 'content-type: application/json' \
-  -d '{"content":"note from api","source":"api","tags":["ops"]}'
+  -d '{"content":"note from api","tags":["ops"]}'
 ```
 
 ## 5. Retrieval Tuning
