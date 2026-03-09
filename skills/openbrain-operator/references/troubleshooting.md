@@ -73,6 +73,8 @@ brain recent --limit 20
 
 ```bash
 brain remove --recent 1
+brain remove --content "exact thought text"
+brain remove --query "semantic description of the thought"
 ```
 
 3. Re-check recent and search to confirm the thought is absent.

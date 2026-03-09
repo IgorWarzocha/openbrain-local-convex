@@ -15,7 +15,9 @@ No Slack. No MCP. No cloud embedding bill.
 - Find thoughts by meaning (`search`)
 - List recent notes (`recent`)
 - Show memory stats (`stats`)
-- Remove a thought by id (`remove`)
+- Remove a thought by selector (`remove`)
+
+![openbrain](https://github.com/user-attachments/assets/95eaa96a-77c6-4d19-8600-72dd05a98d16)
 
 ## Choose Your Install Mode
 
