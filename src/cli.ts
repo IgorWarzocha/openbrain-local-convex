@@ -7,7 +7,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
+import { normalizeTags, parseLimit, parseRecent, parseThreshold, parseThoughtSource } from "./domain/inputs";
 import {
   remoteCaptureThought,
   remoteGetStats,
@@ -89,30 +89,27 @@ program
   .option("--recent <number>", "Remove the Nth most recent thought")
   .option("--threshold <threshold>", "Semantic removal threshold", "0.35")
   .action(async (options) => {
-    const cfg = getConfig();
     const content = typeof options.content === "string" ? options.content.trim() : "";
     const query = typeof options.query === "string" ? options.query.trim() : "";
-    const recent =
-      options.recent === undefined ? 0 : Number.parseInt(String(options.recent), 10);
-    if (options.recent !== undefined && (!Number.isInteger(recent) || recent < 1 || recent > 100)) {
-      throw new Error("recent must be an integer between 1 and 100");
-    }
-    const selectors = Number(content.length > 0) + Number(query.length > 0) + Number(recent > 0);
+    const hasRecent = options.recent !== undefined;
+    const recent = hasRecent ? parseRecent(options.recent) : null;
+    const selectors = Number(content.length > 0) + Number(query.length > 0) + Number(hasRecent);
     if (selectors !== 1) {
       throw new Error("provide exactly one of --content, --query, or --recent");
     }
+    const cfg = getConfig();
     const result =
       cfg.mode === "remote"
         ? content
           ? await remoteRemoveThought(cfg, { content })
           : query
             ? await remoteRemoveThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
-            : await remoteRemoveThought(cfg, { recent })
+            : await remoteRemoveThought(cfg, { recent: recent as number })
         : content
           ? await removeThought(cfg, { content })
           : query
             ? await removeThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
-            : await removeThought(cfg, { recent });
+            : await removeThought(cfg, { recent: recent as number });
     console.log(
       JSON.stringify(
         {

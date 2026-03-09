@@ -44,12 +44,30 @@ export function normalizeTags(value: unknown): string[] {
   throw new Error("tags must be a comma-separated string or string array");
 }
 
-export function parseLimit(value: unknown, fallback: number): number {
+function parseBoundedInteger(value: unknown, fallback: number, fieldName: string): number {
   const n = value === undefined ? fallback : asFiniteNumber(value);
   if (!Number.isInteger(n) || n < 1 || n > 100) {
-    throw new Error("limit must be an integer between 1 and 100");
+    throw new Error(`${fieldName} must be an integer between 1 and 100`);
   }
   return n;
+}
+
+function parseCanonicalBoundedIntegerString(value: string, fieldName: string): number {
+  if (!/^(?:[1-9]\d?|100)$/.test(value)) {
+    throw new Error(`${fieldName} must be an integer between 1 and 100`);
+  }
+  return Number(value);
+}
+
+export function parseLimit(value: unknown, fallback: number): number {
+  return parseBoundedInteger(value, fallback, "limit");
+}
+
+export function parseRecent(value: unknown): number {
+  if (typeof value === "string") {
+    return parseCanonicalBoundedIntegerString(value, "recent");
+  }
+  return parseBoundedInteger(value, 1, "recent");
 }
 
 export function parseThreshold(value: unknown, fallback: number): number {
@@ -59,4 +77,3 @@ export function parseThreshold(value: unknown, fallback: number): number {
   }
   return n;
 }
-

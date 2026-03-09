@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   normalizeTags,
   parseLimit,
+  parseRecent,
   parseThreshold,
   parseThoughtSource,
 } from "../src/domain/inputs";
@@ -25,3 +26,8 @@ test("parseLimit and parseThreshold enforce valid ranges", () => {
   assert.throws(() => parseThreshold("2", 0.2), /number between -1 and 1/);
 });
 
+test("parseRecent rejects malformed selectors instead of truncating them", () => {
+  assert.equal(parseRecent("1"), 1);
+  assert.throws(() => parseRecent("1.5"), /recent must be an integer between 1 and 100/);
+  assert.throws(() => parseRecent("1abc"), /recent must be an integer between 1 and 100/);
+});
