@@ -107,10 +107,6 @@ async function main() {
           sendJson(res, 400, { ok: false, error: "content is required" });
           return;
         }
-        if (body.source !== undefined) {
-          sendJson(res, 400, { ok: false, error: "source is no longer supported" });
-          return;
-        }
         const tags = normalizeTags(body.tags);
         const result = await captureThought(cfg, { content, tags });
         sendJson(res, 200, { ok: true, data: result });
