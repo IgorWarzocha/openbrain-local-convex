@@ -38,19 +38,7 @@ program
       cfg.mode === "remote"
         ? await remoteCaptureThought(cfg, { content, source, tags })
         : await captureThought(cfg, { content, source, tags });
-    console.log(
-      JSON.stringify(
-        {
-          ok: true,
-          thoughtId: result.id,
-          createdAt: new Date(result.createdAt).toISOString(),
-          embeddingDimensions: result.embeddingDimensions,
-          mode: cfg.mode,
-        },
-        null,
-        2,
-      ),
-    );
+    console.log(JSON.stringify({ ok: true, mode: cfg.mode, ...result }, null, 2));
   });
 
 program
@@ -95,18 +83,43 @@ program
 
 program
   .command("remove")
-  .description("Remove a thought by id")
-  .argument("<thoughtId>", "Thought id")
-  .action(async (thoughtId) => {
+  .description("Remove a thought by exact content, semantic query, or recent position")
+  .option("--content <content>", "Remove the one thought matching this exact content")
+  .option("--query <query>", "Remove the one thought that best matches this semantic query")
+  .option("--recent <number>", "Remove the Nth most recent thought")
+  .option("--threshold <threshold>", "Semantic removal threshold", "0.35")
+  .action(async (options) => {
     const cfg = getConfig();
-    const result = cfg.mode === "remote" ? await remoteRemoveThought(cfg, { id: thoughtId }) : await removeThought(cfg, thoughtId);
+    const content = typeof options.content === "string" ? options.content.trim() : "";
+    const query = typeof options.query === "string" ? options.query.trim() : "";
+    const recent =
+      options.recent === undefined ? 0 : Number.parseInt(String(options.recent), 10);
+    if (options.recent !== undefined && (!Number.isInteger(recent) || recent < 1 || recent > 100)) {
+      throw new Error("recent must be an integer between 1 and 100");
+    }
+    const selectors = Number(content.length > 0) + Number(query.length > 0) + Number(recent > 0);
+    if (selectors !== 1) {
+      throw new Error("provide exactly one of --content, --query, or --recent");
+    }
+    const result =
+      cfg.mode === "remote"
+        ? content
+          ? await remoteRemoveThought(cfg, { content })
+          : query
+            ? await remoteRemoveThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
+            : await remoteRemoveThought(cfg, { recent })
+        : content
+          ? await removeThought(cfg, { content })
+          : query
+            ? await removeThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
+            : await removeThought(cfg, { recent });
     console.log(
       JSON.stringify(
         {
           ok: true,
-          thoughtId: result.id,
-          removedAt: new Date(result.removedAt).toISOString(),
           mode: cfg.mode,
+          removedAt: new Date(result.removedAt).toISOString(),
+          removed: result.removed,
         },
         null,
         2,
@@ -128,7 +141,7 @@ program
             mode: "remote",
             remoteUrl: cfg.remoteUrl,
             apiKeyEnabled: Boolean(cfg.apiKey),
-            data: result,
+            stats: result.stats,
           },
           null,
           2,
@@ -137,16 +150,13 @@ program
       return;
     }
     const stats = await getStats(cfg);
-    const lm = await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
+    await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
     console.log(
       JSON.stringify(
         {
           ok: true,
           mode: "local",
           convexUrl: cfg.convexUrl,
-          lmStudioBaseUrl: cfg.lmStudioBaseUrl,
-          lmStudioModel: cfg.lmStudioEmbedModel,
-          embeddingDimensions: lm.dimensions,
           stats,
         },
         null,

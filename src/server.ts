@@ -79,12 +79,11 @@ async function main() {
 
       if (req.method === "GET" && url.pathname === "/health") {
         const stats = await getStats(cfg);
-        const lm = await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
+        await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
         sendJson(res, 200, {
           ok: true,
           data: {
             stats,
-            lmStudioEmbeddingDimensions: lm.dimensions,
           },
         });
         return;
@@ -131,12 +130,32 @@ async function main() {
 
       if (req.method === "POST" && url.pathname === "/remove") {
         const body = await readJson(req);
-        const id = String(body.id ?? "").trim();
-        if (!id) {
-          sendJson(res, 400, { ok: false, error: "id is required" });
+        const content = typeof body.content === "string" ? body.content.trim() : "";
+        const query = typeof body.query === "string" ? body.query.trim() : "";
+        const recentRaw = body.recent;
+        const thresholdRaw = body.threshold;
+
+        const hasContent = content.length > 0;
+        const hasQuery = query.length > 0;
+        const hasRecent = recentRaw !== undefined;
+        const selectionCount = Number(hasContent) + Number(hasQuery) + Number(hasRecent);
+        if (selectionCount !== 1) {
+          sendJson(res, 400, {
+            ok: false,
+            error: "provide exactly one of content, query, or recent",
+          });
           return;
         }
-        const result = await removeThought(cfg, id);
+        let result;
+        if (hasContent) {
+          result = await removeThought(cfg, { content });
+        } else if (hasQuery) {
+          const threshold = parseThreshold(thresholdRaw, 0.35);
+          result = await removeThought(cfg, { query, threshold });
+        } else {
+          const recent = parseLimit(recentRaw, 1);
+          result = await removeThought(cfg, { recent });
+        }
         sendJson(res, 200, { ok: true, data: result });
         return;
       }

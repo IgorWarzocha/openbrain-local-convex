@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { RemoteOpenBrainConfig } from "./config";
 import type { ThoughtSource } from "./domain/inputs";
+import type { PresentedThought } from "./presenters";
 
 const ApiEnvelopeSchema = z.object({
   ok: z.boolean(),
@@ -15,21 +16,15 @@ type RequestInitLike = {
 };
 
 export type CaptureResult = {
-  id: string;
-  createdAt: number;
-  embeddingDimensions: number;
+  saved: PresentedThought;
 };
 
 export type SearchResult = {
-  totalThoughtsScanned: number;
-  matches: Array<{
-    _id: string;
-    content: string;
-    tags: string[];
-    source: ThoughtSource;
-    createdAt: number;
-    score: number;
-  }>;
+  thoughts: PresentedThought[];
+};
+
+export type RecentResult = {
+  thoughts: PresentedThought[];
 };
 
 export type StatsResult = {
@@ -40,12 +35,11 @@ export type StatsResult = {
 
 export type HealthResult = {
   stats: StatsResult;
-  lmStudioEmbeddingDimensions: number;
 };
 
 export type RemoveResult = {
-  id: string;
   removedAt: number;
+  removed: PresentedThought;
 };
 
 export function buildRemoteUrl(
@@ -154,13 +148,13 @@ export async function remoteSearchThoughts(
 export async function remoteListRecentThoughts(
   cfg: RemoteOpenBrainConfig,
   limit?: number,
-): Promise<Array<Record<string, unknown>>> {
+): Promise<RecentResult> {
   return (await remoteRequest(cfg, "/recent", {
     method: "GET",
     query: {
       limit,
     },
-  })) as Array<Record<string, unknown>>;
+  })) as RecentResult;
 }
 
 export async function remoteGetStats(cfg: RemoteOpenBrainConfig): Promise<StatsResult> {
@@ -177,12 +171,13 @@ export async function remoteHealth(cfg: RemoteOpenBrainConfig): Promise<HealthRe
 
 export async function remoteRemoveThought(
   cfg: RemoteOpenBrainConfig,
-  input: { id: string },
+  input:
+    | { content: string; query?: never; recent?: never; threshold?: never }
+    | { content?: never; query: string; recent?: never; threshold?: number }
+    | { content?: never; query?: never; recent: number; threshold?: never },
 ): Promise<RemoveResult> {
   return (await remoteRequest(cfg, "/remove", {
     method: "POST",
-    body: {
-      id: input.id,
-    },
+    body: input,
   })) as RemoveResult;
 }

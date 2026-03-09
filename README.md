@@ -86,7 +86,7 @@ brain capture "your thought"
 brain search "your query"
 brain recent --limit 20
 brain stats
-brain remove "<thought_id>"
+brain remove --recent 1
 ```
 
 ## 2) Local Server Mode (separate machine on your LAN)
@@ -182,7 +182,7 @@ npm run brain -- capture "your thought"
 npm run brain -- search "your query"
 npm run brain -- recent --limit 20
 npm run brain -- stats
-npm run brain -- remove "<thought_id>"
+npm run brain -- remove --recent 1
 ```
 
 ## API Endpoints

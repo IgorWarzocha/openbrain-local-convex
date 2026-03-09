@@ -80,12 +80,12 @@ No ingestion event table in MVP.
 - Accept plain text content.
 - Generate embedding via local embeddings service.
 - Persist thought row.
-- Return created thought ID + timestamp.
+- Return a human-readable saved-thought summary with timestamp.
 
 ### FR2: Search Thoughts
 - Embed query text via local embeddings service.
 - Run vector search.
-- Return ranked results with score and snippet.
+- Return the best matching thoughts only.
 - Support optional limit + threshold.
 
 ### FR3: List Recent
@@ -99,6 +99,7 @@ No ingestion event table in MVP.
 - `captureThought(content, source?)`
 - `searchThoughts(query, limit?, threshold?)`
 - `listRecentThoughts(limit?)`
+- `removeThought(content|query|recent)`
 - `getStats()`
 
 ## 8) Security Requirements

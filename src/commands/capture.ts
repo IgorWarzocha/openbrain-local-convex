@@ -2,6 +2,8 @@ import { embedText } from "../lmstudio";
 import { api, createConvexClient } from "../convexClient";
 import type { LocalOpenBrainConfig } from "../config";
 import type { ThoughtSource } from "../domain/inputs";
+import type { PresentedThought } from "../presenters";
+import { toIsoTimestamp } from "../presenters";
 
 export async function captureThought(
   cfg: LocalOpenBrainConfig,
@@ -10,13 +12,23 @@ export async function captureThought(
     source?: ThoughtSource;
     tags?: string[];
   },
-): Promise<{ id: string; createdAt: number; embeddingDimensions: number }> {
+): Promise<{ saved: PresentedThought }> {
   const client = createConvexClient(cfg.convexUrl);
+  const tags = Array.from(new Set((input.tags ?? []).map((tag) => tag.trim()).filter(Boolean)));
+  const source = input.source ?? "cli";
   const embedding = await embedText(input.content, cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
-  return (await client.mutation(api.brain.captureThought, {
+  const result = (await client.mutation(api.brain.captureThought, {
     content: input.content,
     embedding,
-    source: input.source ?? "cli",
-    tags: input.tags ?? [],
-  })) as { id: string; createdAt: number; embeddingDimensions: number };
+    source,
+    tags,
+  })) as { createdAt: number };
+  return {
+    saved: {
+      content: input.content.trim(),
+      tags,
+      source,
+      createdAt: toIsoTimestamp(result.createdAt),
+    },
+  };
 }

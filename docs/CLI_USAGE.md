@@ -52,7 +52,9 @@ npm run brain -- stats
 ## Remove Thought
 
 ```bash
-npm run brain -- remove "<thought_id>"
+npm run brain -- remove --recent 1
+npm run brain -- remove --content "Your exact thought here"
+npm run brain -- remove --query "the thought about launch risk"
 ```
 
 ## HTTP API
@@ -81,11 +83,20 @@ curl -s -X POST "http://192.168.0.113:8787/capture" \
   -d '{"content":"note from api","source":"api","tags":["ops"]}'
 ```
 
-Remove by id:
+Remove by recent position:
 
 ```bash
 curl -s -X POST "http://192.168.0.113:8787/remove" \
   -H 'x-openbrain-key: <shared-secret>' \
   -H 'content-type: application/json' \
-  -d '{"id":"<thought_id>"}'
+  -d '{"recent":1}'
+```
+
+Remove by exact content:
+
+```bash
+curl -s -X POST "http://192.168.0.113:8787/remove" \
+  -H 'x-openbrain-key: <shared-secret>' \
+  -H 'content-type: application/json' \
+  -d '{"content":"Your exact thought here"}'
 ```

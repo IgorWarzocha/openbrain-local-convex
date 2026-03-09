@@ -111,6 +111,22 @@ Fix:
 - Stop conflicting process/session first.
 - If using services: `bash scripts/services.sh restart`
 
+## Convex service asks to upgrade backend and crashes under systemd
+
+Cause:
+- Local Convex backend version changed and a non-interactive service cannot answer the upgrade prompt.
+
+Fix:
+
+```bash
+bash scripts/services.sh install
+systemctl --user status convex-local.service --no-pager
+```
+
+Expected:
+- `convex-local.service` returns to `ActiveState=active`
+- the service upgrades the local backend automatically if needed
+
 ## CLI gets `401 unauthorized`
 
 Cause:

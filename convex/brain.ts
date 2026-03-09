@@ -1,13 +1,24 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { presentMatch, presentThought } from "../src/presenters";
 
 type RankedThought = {
   _id: string;
+  _creationTime: number;
   content: string;
   tags: string[];
   source: "cli" | "manual" | "api";
-  createdAt: number;
   score: number;
+};
+
+type StoredThought = {
+  _id: string;
+  _creationTime: number;
+  content: string;
+  tags: string[];
+  source: "cli" | "manual" | "api";
+  embedding: number[];
+  createdAt: number;
 };
 
 function cosineSimilarity(a: number[], b: number[]): number {
@@ -28,6 +39,32 @@ function cosineSimilarity(a: number[], b: number[]): number {
     return -1;
   }
   return dot / (Math.sqrt(magA) * Math.sqrt(magB));
+}
+
+function normalizeExactContentMatch(content: string): string {
+  return content.trim();
+}
+
+function rankThoughts(
+  thoughts: StoredThought[],
+  queryEmbedding: number[],
+  limit: number,
+  threshold: number,
+): RankedThought[] {
+  return thoughts
+    .map(
+      (thought): RankedThought => ({
+        _id: thought._id,
+        _creationTime: thought._creationTime,
+        content: thought.content,
+        tags: thought.tags,
+        source: thought.source,
+        score: cosineSimilarity(queryEmbedding, thought.embedding),
+      }),
+    )
+    .filter((row) => row.score >= threshold)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit);
 }
 
 export const captureThought = mutation({
@@ -62,9 +99,14 @@ export const captureThought = mutation({
       createdAt,
     });
 
+    const insertedThought = await ctx.db.get(thoughtId);
+    if (!insertedThought) {
+      throw new Error("failed to read inserted thought");
+    }
+
     return {
       id: thoughtId,
-      createdAt,
+      createdAt: insertedThought._creationTime,
       embeddingDimensions: args.embedding.length,
     };
   },
@@ -85,24 +127,10 @@ export const searchThoughts = query({
     const threshold = args.threshold ?? 0.2;
     const thoughts = await ctx.db.query("thoughts").collect();
 
-    const ranked = thoughts
-      .map(
-        (thought): RankedThought => ({
-          _id: thought._id,
-          content: thought.content,
-          tags: thought.tags,
-          source: thought.source,
-          createdAt: thought.createdAt,
-          score: cosineSimilarity(args.queryEmbedding, thought.embedding),
-        }),
-      )
-      .filter((row) => row.score >= threshold)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    const ranked = rankThoughts(thoughts as StoredThought[], args.queryEmbedding, limit, threshold);
 
     return {
-      totalThoughtsScanned: thoughts.length,
-      matches: ranked,
+      thoughts: ranked.map((thought) => presentMatch(thought)),
     };
   },
 });
@@ -113,7 +141,65 @@ export const listRecentThoughts = query({
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(Math.floor(args.limit ?? 20), 1), 100);
-    return await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").take(limit);
+    const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").take(limit);
+    return {
+      thoughts: thoughts.map((thought) => presentThought(thought)),
+    };
+  },
+});
+
+export const listRecentThoughtsForRemoval = query({
+  args: {
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(Math.floor(args.limit ?? 20), 1), 100);
+    const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").take(limit);
+    return thoughts.map((thought) => ({
+      id: thought._id,
+      ...presentThought(thought),
+    }));
+  },
+});
+
+export const findThoughtsByExactContent = query({
+  args: {
+    content: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const normalizedContent = normalizeExactContentMatch(args.content);
+    if (!normalizedContent) {
+      throw new Error("content cannot be empty");
+    }
+    const thoughts = await ctx.db.query("thoughts").collect();
+    return thoughts
+      .filter((thought) => thought.content.trim() === normalizedContent)
+      .sort((a, b) => b._creationTime - a._creationTime)
+      .map((thought) => ({
+        id: thought._id,
+        ...presentThought(thought),
+      }));
+  },
+});
+
+export const searchThoughtsForRemoval = query({
+  args: {
+    queryEmbedding: v.array(v.number()),
+    limit: v.optional(v.number()),
+    threshold: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    if (args.queryEmbedding.length === 0) {
+      throw new Error("queryEmbedding cannot be empty");
+    }
+    const limit = Math.min(Math.max(Math.floor(args.limit ?? 3), 1), 10);
+    const threshold = args.threshold ?? 0.35;
+    const thoughts = await ctx.db.query("thoughts").collect();
+    const ranked = rankThoughts(thoughts as StoredThought[], args.queryEmbedding, limit, threshold);
+    return ranked.map((thought) => ({
+      id: thought._id,
+      ...presentMatch(thought),
+    }));
   },
 });
 
@@ -155,7 +241,6 @@ export const removeThought = mutation({
     }
     await ctx.db.delete(args.id);
     return {
-      id: args.id,
       removedAt: Date.now(),
     };
   },

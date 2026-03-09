@@ -25,5 +25,12 @@ export async function searchThoughts(
   if (input.threshold !== undefined) {
     args.threshold = input.threshold;
   }
-  return await client.query(api.brain.searchThoughts, args);
+  return (await client.query(api.brain.searchThoughts, args)) as {
+    thoughts: Array<{
+      content: string;
+      tags: string[];
+      source: "cli" | "manual" | "api";
+      createdAt: string;
+    }>;
+  };
 }

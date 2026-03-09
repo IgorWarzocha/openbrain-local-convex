@@ -5,10 +5,9 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=__WORKDIR__
-ExecStart=/usr/bin/env bash -lc 'cd __WORKDIR__ && npx convex dev --tail-logs disable'
+ExecStart=/usr/bin/env bash -lc 'cd __WORKDIR__ && exec __WORKDIR__/scripts/convex-dev-service.sh'
 Restart=always
 RestartSec=2
 
 [Install]
 WantedBy=default.target
-

@@ -48,7 +48,7 @@ Fix:
 
 ## 4. No Search Hits After Capture
 
-1. Confirm capture returned `ok: true` and a `thoughtId`.
+1. Confirm capture returned `ok: true` and a `saved` thought.
 2. Confirm stats changed:
 
 ```bash
@@ -63,19 +63,19 @@ brain search "<query>" --limit 20 --threshold 0.0
 
 ## 5. Remove Fails or Appears Ineffective
 
-1. Fetch a valid ID:
+1. Inspect recent thoughts:
 
 ```bash
 brain recent --limit 20
 ```
 
-2. Remove:
+2. Remove by selector:
 
 ```bash
-brain remove "<thought_id>"
+brain remove --recent 1
 ```
 
-3. Re-check recent and search to confirm ID absence.
+3. Re-check recent and search to confirm the thought is absent.
 
 ## 6. Mode Mismatch
 

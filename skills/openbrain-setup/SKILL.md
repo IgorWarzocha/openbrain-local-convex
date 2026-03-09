@@ -75,6 +75,8 @@ ssh <host> "~/.lmstudio/bin/lms get embeddinggemma -n 20 -y"
 ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ```
 
+`bash scripts/services.sh install` is the canonical path. It renders units, restarts services, and handles a local Convex backend upgrade when needed.
+
 Set server `.env` for LAN API access:
 
 ```env

@@ -62,6 +62,8 @@ ssh <host> "~/.lmstudio/bin/lms get embeddinggemma -n 20 -y"
 ssh <host> "cd <remote_dir> && bash scripts/services.sh install"
 ```
 
+`services.sh install` also handles a local Convex backend upgrade if the server is on an older backend version.
+
 5. Check health:
 
 ```bash

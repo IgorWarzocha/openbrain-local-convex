@@ -64,7 +64,9 @@ brain stats
 Remove:
 
 ```bash
-brain remove "<thought_id>"
+brain remove --recent 1
+brain remove --content "LAN memory write test"
+brain remove --query "the LAN memory write test note"
 ```
 
 ## 4. Direct API Calls
