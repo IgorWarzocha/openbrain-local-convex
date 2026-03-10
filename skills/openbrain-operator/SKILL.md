@@ -65,12 +65,14 @@ Search:
 
 ```bash
 brain search "What did I note about QA blockers?" --limit 8 --threshold 0.2
+brain search "What did I note about QA blockers?" today
 ```
 
 Recent:
 
 ```bash
 brain recent --limit 20
+brain recent today
 ```
 
 Stats:

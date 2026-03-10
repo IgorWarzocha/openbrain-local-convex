@@ -8,6 +8,7 @@ export async function searchThoughts(
     query: string;
     limit?: number;
     threshold?: number;
+    date?: string;
   },
 ) {
   const client = createConvexClient(cfg.convexUrl);
@@ -16,6 +17,7 @@ export async function searchThoughts(
     queryEmbedding: number[];
     limit?: number;
     threshold?: number;
+    date?: string;
   } = {
     queryEmbedding,
   };
@@ -24,6 +26,9 @@ export async function searchThoughts(
   }
   if (input.threshold !== undefined) {
     args.threshold = input.threshold;
+  }
+  if (input.date !== undefined) {
+    args.date = input.date;
   }
   return (await client.query(api.brain.searchThoughts, args)) as {
     thoughts: Array<{

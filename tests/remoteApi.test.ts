@@ -6,8 +6,9 @@ test("buildRemoteUrl joins base and path and encodes query", () => {
   const url = buildRemoteUrl("http://192.168.0.113:8787/", "/recent", {
     limit: 20,
     q: "launch risk",
+    date: "2026-03-10",
   });
-  assert.equal(url, "http://192.168.0.113:8787/recent?limit=20&q=launch+risk");
+  assert.equal(url, "http://192.168.0.113:8787/recent?limit=20&q=launch+risk&date=2026-03-10");
 });
 
 test("parseApiEnvelope validates success payload", () => {
@@ -29,4 +30,3 @@ test("parseApiEnvelope returns error payload when ok=false", () => {
 test("parseApiEnvelope fails for invalid shape", () => {
   assert.throws(() => parseApiEnvelope({ data: {} }), /Invalid remote API response shape/);
 });
-

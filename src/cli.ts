@@ -7,7 +7,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
+import { normalizeTags, parseDateFilter, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
 import {
   remoteCaptureThought,
   remoteGetStats,
@@ -43,30 +43,44 @@ program
   .command("search")
   .description("Semantic search thoughts")
   .argument("<query>", "Search query")
+  .argument("[date]", "today | yesterday | YYYY-MM-DD")
   .option("--limit <limit>", "Result limit", "8")
   .option("--threshold <threshold>", "Similarity threshold", "0.2")
-  .action(async (query, options) => {
-    const cfg = getConfig();
+  .action(async (query, date, options) => {
     const limit = parseLimit(options.limit, 8);
     const threshold = parseThreshold(options.threshold, 0.2);
+    const dateFilter = parseDateFilter(date);
+    const cfg = getConfig();
+    const searchInput = {
+      query,
+      limit,
+      threshold,
+      ...(dateFilter ? { date: dateFilter } : {}),
+    };
     const result =
       cfg.mode === "remote"
-        ? await remoteSearchThoughts(cfg, { query, limit, threshold })
-        : await searchThoughts(cfg, { query, limit, threshold });
+        ? await remoteSearchThoughts(cfg, searchInput)
+        : await searchThoughts(cfg, searchInput);
     console.log(JSON.stringify(result, null, 2));
   });
 
 program
   .command("recent")
   .description("List recent thoughts")
+  .argument("[date]", "today | yesterday | YYYY-MM-DD")
   .option("--limit <limit>", "Result limit", "20")
-  .action(async (options) => {
-    const cfg = getConfig();
+  .action(async (date, options) => {
     const limit = parseLimit(options.limit, 20);
+    const dateFilter = parseDateFilter(date);
+    const cfg = getConfig();
+    const recentInput = {
+      limit,
+      ...(dateFilter ? { date: dateFilter } : {}),
+    };
     const result =
       cfg.mode === "remote"
-        ? await remoteListRecentThoughts(cfg, limit)
-        : await listRecentThoughts(cfg, limit);
+        ? await remoteListRecentThoughts(cfg, recentInput)
+        : await listRecentThoughts(cfg, recentInput);
     console.log(JSON.stringify(result, null, 2));
   });
 

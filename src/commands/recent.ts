@@ -1,17 +1,22 @@
 import { api, createConvexClient } from "../convexClient";
 import type { LocalOpenBrainConfig } from "../config";
 
-export async function listRecentThoughts(cfg: LocalOpenBrainConfig, limit?: number) {
+export async function listRecentThoughts(
+  cfg: LocalOpenBrainConfig,
+  input: { limit?: number; date?: string } = {},
+) {
   const client = createConvexClient(cfg.convexUrl);
-  if (limit === undefined) {
-    return (await client.query(api.brain.listRecentThoughts, {})) as {
-      thoughts: Array<{
-        content: string;
-        createdAt: string;
-      }>;
-    };
+  const args: {
+    limit?: number;
+    date?: string;
+  } = {};
+  if (input.limit !== undefined) {
+    args.limit = input.limit;
   }
-  return (await client.query(api.brain.listRecentThoughts, { limit })) as {
+  if (input.date !== undefined) {
+    args.date = input.date;
+  }
+  return (await client.query(api.brain.listRecentThoughts, args)) as {
     thoughts: Array<{
       content: string;
       createdAt: string;

@@ -131,7 +131,7 @@ export async function remoteCaptureThought(
 
 export async function remoteSearchThoughts(
   cfg: RemoteOpenBrainConfig,
-  input: { query: string; limit?: number; threshold?: number },
+  input: { query: string; limit?: number; threshold?: number; date?: string },
 ): Promise<SearchResult> {
   return (await remoteRequest(cfg, "/search", {
     method: "POST",
@@ -139,18 +139,20 @@ export async function remoteSearchThoughts(
       query: input.query,
       limit: input.limit,
       threshold: input.threshold,
+      date: input.date,
     },
   })) as SearchResult;
 }
 
 export async function remoteListRecentThoughts(
   cfg: RemoteOpenBrainConfig,
-  limit?: number,
+  input: { limit?: number; date?: string } = {},
 ): Promise<RecentResult> {
   return (await remoteRequest(cfg, "/recent", {
     method: "GET",
     query: {
-      limit,
+      limit: input.limit,
+      date: input.date,
     },
   })) as RecentResult;
 }

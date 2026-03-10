@@ -8,7 +8,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { searchThoughts } from "./commands/search";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
+import { normalizeTags, parseCanonicalDateFilter, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
 
 type JsonObject = Record<string, unknown>;
 
@@ -96,7 +96,14 @@ async function main() {
 
       if (req.method === "GET" && url.pathname === "/recent") {
         const limit = parseLimit(url.searchParams.get("limit") ?? undefined, 20);
-        sendJson(res, 200, { ok: true, data: await listRecentThoughts(cfg, limit) });
+        const date = parseCanonicalDateFilter(url.searchParams.get("date") ?? undefined);
+        sendJson(res, 200, {
+          ok: true,
+          data: await listRecentThoughts(cfg, {
+            limit,
+            ...(date ? { date } : {}),
+          }),
+        });
         return;
       }
 
@@ -122,7 +129,13 @@ async function main() {
         }
         const limit = parseLimit(body.limit, 8);
         const threshold = parseThreshold(body.threshold, 0.2);
-        const result = await searchThoughts(cfg, { query, limit, threshold });
+        const date = parseCanonicalDateFilter(body.date);
+        const result = await searchThoughts(cfg, {
+          query,
+          limit,
+          threshold,
+          ...(date ? { date } : {}),
+        });
         sendJson(res, 200, { ok: true, data: result });
         return;
       }

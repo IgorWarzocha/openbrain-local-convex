@@ -35,12 +35,14 @@ npm run brain -- capture "Your thought here" --tags planning,idea
 
 ```bash
 npm run brain -- search "what did I write about launch risk?" --limit 8 --threshold 0.2
+npm run brain -- search "what did I write about launch risk?" today
 ```
 
 ## Recent Thoughts
 
 ```bash
 npm run brain -- recent --limit 20
+npm run brain -- recent yesterday
 ```
 
 ## Stats

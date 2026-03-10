@@ -42,6 +42,13 @@ function normalizeExactContentMatch(content: string): string {
   return content.trim();
 }
 
+function matchesPresentedDate(epochMs: number, date: string | undefined): boolean {
+  if (!date) {
+    return true;
+  }
+  return new Date(epochMs).toISOString().slice(0, 10) === date;
+}
+
 function rankThoughts(
   thoughts: StoredThought[],
   queryEmbedding: number[],
@@ -110,6 +117,7 @@ export const searchThoughts = query({
     queryEmbedding: v.array(v.number()),
     limit: v.optional(v.number()),
     threshold: v.optional(v.number()),
+    date: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     if (args.queryEmbedding.length === 0) {
@@ -119,8 +127,9 @@ export const searchThoughts = query({
     const limit = Math.min(Math.max(Math.floor(args.limit ?? 8), 1), 50);
     const threshold = args.threshold ?? 0.2;
     const thoughts = await ctx.db.query("thoughts").collect();
+    const filteredThoughts = thoughts.filter((thought) => matchesPresentedDate(thought._creationTime, args.date));
 
-    const ranked = rankThoughts(thoughts as StoredThought[], args.queryEmbedding, limit, threshold);
+    const ranked = rankThoughts(filteredThoughts as StoredThought[], args.queryEmbedding, limit, threshold);
 
     return {
       thoughts: ranked.map((thought) => presentMatch(thought)),
@@ -131,12 +140,16 @@ export const searchThoughts = query({
 export const listRecentThoughts = query({
   args: {
     limit: v.optional(v.number()),
+    date: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(Math.floor(args.limit ?? 20), 1), 100);
-    const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").take(limit);
+    const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").collect();
     return {
-      thoughts: thoughts.map((thought) => presentThought(thought)),
+      thoughts: thoughts
+        .filter((thought) => matchesPresentedDate(thought._creationTime, args.date))
+        .slice(0, limit)
+        .map((thought) => presentThought(thought)),
     };
   },
 });

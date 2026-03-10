@@ -182,7 +182,9 @@ When `OPENBRAIN_REMOTE_URL` is set, the CLI talks to the remote API directly and
 ```bash
 npm run brain -- capture "your thought"
 npm run brain -- search "your query"
+npm run brain -- search "your query" today
 npm run brain -- recent --limit 20
+npm run brain -- recent today
 npm run brain -- stats
 npm run brain -- remove --recent 1
 ```
