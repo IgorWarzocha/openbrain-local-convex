@@ -58,19 +58,21 @@ Health must return JSON containing:
 Capture:
 
 ```bash
-brain capture "Decided to delay launch for QA blockers" --source cli --tags planning,qa
+brain capture "Decided to delay launch for QA blockers" --tags planning,qa
 ```
 
 Search:
 
 ```bash
 brain search "What did I note about QA blockers?" --limit 8 --threshold 0.2
+brain search "What did I note about QA blockers?" today
 ```
 
 Recent:
 
 ```bash
 brain recent --limit 20
+brain recent today
 ```
 
 Stats:
@@ -82,24 +84,26 @@ brain stats
 Remove:
 
 ```bash
-brain remove "<thought_id>"
+brain remove --recent 1
+brain remove --content "Decided to delay launch for QA blockers"
+brain remove --query "the note about delaying launch"
 ```
 
 ### 3. Remove Validation
 
-1. Get ID from:
+1. Inspect candidates:
 
 ```bash
 brain recent --limit 20
 ```
 
-2. Remove:
+2. Remove one thought:
 
 ```bash
-brain remove "<thought_id>"
+brain remove --recent 1
 ```
 
-3. Verify ID is gone:
+3. Verify the thought is gone:
 
 ```bash
 brain recent --limit 20
@@ -149,6 +153,6 @@ which brain
 2. Show exact commands executed.
 3. Show key outputs:
    - Health status.
-   - Capture/remove thought ID when applicable.
-   - Search hit count or empty result.
+   - Saved/removed thought summary when applicable.
+   - Search results or empty result.
 4. If unresolved, provide one next action with the exact command.

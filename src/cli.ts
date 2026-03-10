@@ -7,7 +7,7 @@ import { listRecentThoughts } from "./commands/recent";
 import { getStats } from "./commands/stats";
 import { removeThought } from "./commands/remove";
 import { checkLmStudioHealth } from "./lmstudio";
-import { normalizeTags, parseLimit, parseThreshold, parseThoughtSource } from "./domain/inputs";
+import { normalizeTags, parseDateFilter, parseLimit, parseRecent, parseThreshold } from "./domain/inputs";
 import {
   remoteCaptureThought,
   remoteGetStats,
@@ -28,59 +28,59 @@ program
   .command("capture")
   .description("Capture a thought")
   .argument("<content>", "Thought content")
-  .option("--source <source>", "Source label: cli|manual|api", "cli")
   .option("--tags <tags>", "Comma-separated tags", "")
   .action(async (content, options) => {
     const cfg = getConfig();
-    const source = parseThoughtSource(options.source, "cli");
     const tags = normalizeTags(options.tags);
     const result =
       cfg.mode === "remote"
-        ? await remoteCaptureThought(cfg, { content, source, tags })
-        : await captureThought(cfg, { content, source, tags });
-    console.log(
-      JSON.stringify(
-        {
-          ok: true,
-          thoughtId: result.id,
-          createdAt: new Date(result.createdAt).toISOString(),
-          embeddingDimensions: result.embeddingDimensions,
-          mode: cfg.mode,
-        },
-        null,
-        2,
-      ),
-    );
+        ? await remoteCaptureThought(cfg, { content, tags })
+        : await captureThought(cfg, { content, tags });
+    console.log(JSON.stringify({ ok: true, mode: cfg.mode, ...result }, null, 2));
   });
 
 program
   .command("search")
   .description("Semantic search thoughts")
   .argument("<query>", "Search query")
+  .argument("[date]", "today | yesterday | YYYY-MM-DD")
   .option("--limit <limit>", "Result limit", "8")
   .option("--threshold <threshold>", "Similarity threshold", "0.2")
-  .action(async (query, options) => {
-    const cfg = getConfig();
+  .action(async (query, date, options) => {
     const limit = parseLimit(options.limit, 8);
     const threshold = parseThreshold(options.threshold, 0.2);
+    const dateFilter = parseDateFilter(date);
+    const cfg = getConfig();
+    const searchInput = {
+      query,
+      limit,
+      threshold,
+      ...(dateFilter ? { date: dateFilter } : {}),
+    };
     const result =
       cfg.mode === "remote"
-        ? await remoteSearchThoughts(cfg, { query, limit, threshold })
-        : await searchThoughts(cfg, { query, limit, threshold });
+        ? await remoteSearchThoughts(cfg, searchInput)
+        : await searchThoughts(cfg, searchInput);
     console.log(JSON.stringify(result, null, 2));
   });
 
 program
   .command("recent")
   .description("List recent thoughts")
+  .argument("[date]", "today | yesterday | YYYY-MM-DD")
   .option("--limit <limit>", "Result limit", "20")
-  .action(async (options) => {
-    const cfg = getConfig();
+  .action(async (date, options) => {
     const limit = parseLimit(options.limit, 20);
+    const dateFilter = parseDateFilter(date);
+    const cfg = getConfig();
+    const recentInput = {
+      limit,
+      ...(dateFilter ? { date: dateFilter } : {}),
+    };
     const result =
       cfg.mode === "remote"
-        ? await remoteListRecentThoughts(cfg, limit)
-        : await listRecentThoughts(cfg, limit);
+        ? await remoteListRecentThoughts(cfg, recentInput)
+        : await listRecentThoughts(cfg, recentInput);
     console.log(JSON.stringify(result, null, 2));
   });
 
@@ -95,18 +95,40 @@ program
 
 program
   .command("remove")
-  .description("Remove a thought by id")
-  .argument("<thoughtId>", "Thought id")
-  .action(async (thoughtId) => {
+  .description("Remove a thought by exact content, semantic query, or recent position")
+  .option("--content <content>", "Remove the one thought matching this exact content")
+  .option("--query <query>", "Remove the one thought that best matches this semantic query")
+  .option("--recent <number>", "Remove the Nth most recent thought")
+  .option("--threshold <threshold>", "Semantic removal threshold", "0.35")
+  .action(async (options) => {
+    const content = typeof options.content === "string" ? options.content.trim() : "";
+    const query = typeof options.query === "string" ? options.query.trim() : "";
+    const hasRecent = options.recent !== undefined;
+    const recent = hasRecent ? parseRecent(options.recent) : null;
+    const selectors = Number(content.length > 0) + Number(query.length > 0) + Number(hasRecent);
+    if (selectors !== 1) {
+      throw new Error("provide exactly one of --content, --query, or --recent");
+    }
     const cfg = getConfig();
-    const result = cfg.mode === "remote" ? await remoteRemoveThought(cfg, { id: thoughtId }) : await removeThought(cfg, thoughtId);
+    const result =
+      cfg.mode === "remote"
+        ? content
+          ? await remoteRemoveThought(cfg, { content })
+          : query
+            ? await remoteRemoveThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
+            : await remoteRemoveThought(cfg, { recent: recent as number })
+        : content
+          ? await removeThought(cfg, { content })
+          : query
+            ? await removeThought(cfg, { query, threshold: parseThreshold(options.threshold, 0.35) })
+            : await removeThought(cfg, { recent: recent as number });
     console.log(
       JSON.stringify(
         {
           ok: true,
-          thoughtId: result.id,
-          removedAt: new Date(result.removedAt).toISOString(),
           mode: cfg.mode,
+          removedAt: result.removedAt,
+          removed: result.removed,
         },
         null,
         2,
@@ -128,7 +150,7 @@ program
             mode: "remote",
             remoteUrl: cfg.remoteUrl,
             apiKeyEnabled: Boolean(cfg.apiKey),
-            data: result,
+            stats: result.stats,
           },
           null,
           2,
@@ -137,16 +159,13 @@ program
       return;
     }
     const stats = await getStats(cfg);
-    const lm = await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
+    await checkLmStudioHealth(cfg.lmStudioEmbedModel, cfg.lmStudioBaseUrl);
     console.log(
       JSON.stringify(
         {
           ok: true,
           mode: "local",
           convexUrl: cfg.convexUrl,
-          lmStudioBaseUrl: cfg.lmStudioBaseUrl,
-          lmStudioModel: cfg.lmStudioEmbedModel,
-          embeddingDimensions: lm.dimensions,
           stats,
         },
         null,

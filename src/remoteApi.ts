@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { RemoteOpenBrainConfig } from "./config";
-import type { ThoughtSource } from "./domain/inputs";
+import type { PresentedThought } from "./presenters";
 
 const ApiEnvelopeSchema = z.object({
   ok: z.boolean(),
@@ -15,21 +15,15 @@ type RequestInitLike = {
 };
 
 export type CaptureResult = {
-  id: string;
-  createdAt: number;
-  embeddingDimensions: number;
+  saved: PresentedThought;
 };
 
 export type SearchResult = {
-  totalThoughtsScanned: number;
-  matches: Array<{
-    _id: string;
-    content: string;
-    tags: string[];
-    source: ThoughtSource;
-    createdAt: number;
-    score: number;
-  }>;
+  thoughts: PresentedThought[];
+};
+
+export type RecentResult = {
+  thoughts: PresentedThought[];
 };
 
 export type StatsResult = {
@@ -40,12 +34,11 @@ export type StatsResult = {
 
 export type HealthResult = {
   stats: StatsResult;
-  lmStudioEmbeddingDimensions: number;
 };
 
 export type RemoveResult = {
-  id: string;
-  removedAt: number;
+  removedAt: string;
+  removed: PresentedThought;
 };
 
 export function buildRemoteUrl(
@@ -125,13 +118,12 @@ async function remoteRequest(
 
 export async function remoteCaptureThought(
   cfg: RemoteOpenBrainConfig,
-  input: { content: string; source?: ThoughtSource; tags?: string[] },
+  input: { content: string; tags?: string[] },
 ): Promise<CaptureResult> {
   return (await remoteRequest(cfg, "/capture", {
     method: "POST",
     body: {
       content: input.content,
-      source: input.source,
       tags: input.tags,
     },
   })) as CaptureResult;
@@ -139,7 +131,7 @@ export async function remoteCaptureThought(
 
 export async function remoteSearchThoughts(
   cfg: RemoteOpenBrainConfig,
-  input: { query: string; limit?: number; threshold?: number },
+  input: { query: string; limit?: number; threshold?: number; date?: string },
 ): Promise<SearchResult> {
   return (await remoteRequest(cfg, "/search", {
     method: "POST",
@@ -147,20 +139,22 @@ export async function remoteSearchThoughts(
       query: input.query,
       limit: input.limit,
       threshold: input.threshold,
+      date: input.date,
     },
   })) as SearchResult;
 }
 
 export async function remoteListRecentThoughts(
   cfg: RemoteOpenBrainConfig,
-  limit?: number,
-): Promise<Array<Record<string, unknown>>> {
+  input: { limit?: number; date?: string } = {},
+): Promise<RecentResult> {
   return (await remoteRequest(cfg, "/recent", {
     method: "GET",
     query: {
-      limit,
+      limit: input.limit,
+      date: input.date,
     },
-  })) as Array<Record<string, unknown>>;
+  })) as RecentResult;
 }
 
 export async function remoteGetStats(cfg: RemoteOpenBrainConfig): Promise<StatsResult> {
@@ -177,12 +171,13 @@ export async function remoteHealth(cfg: RemoteOpenBrainConfig): Promise<HealthRe
 
 export async function remoteRemoveThought(
   cfg: RemoteOpenBrainConfig,
-  input: { id: string },
+  input:
+    | { content: string; query?: never; recent?: never; threshold?: never }
+    | { content?: never; query: string; recent?: never; threshold?: number }
+    | { content?: never; query?: never; recent: number; threshold?: never },
 ): Promise<RemoveResult> {
   return (await remoteRequest(cfg, "/remove", {
     method: "POST",
-    body: {
-      id: input.id,
-    },
+    body: input,
   })) as RemoveResult;
 }

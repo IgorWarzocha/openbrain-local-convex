@@ -104,6 +104,7 @@ preflight() {
   [ -d "$WORKDIR" ] || die "workdir does not exist: $WORKDIR"
   [ -x "$LMSTUDIO_BIN" ] || die "LM Studio CLI not found or not executable: $LMSTUDIO_BIN"
   [ -x "$WORKDIR/scripts/lmstudio-supervisor.sh" ] || die "LM Studio supervisor script not found or not executable: $WORKDIR/scripts/lmstudio-supervisor.sh"
+  [ -x "$WORKDIR/scripts/convex-dev-service.sh" ] || die "Convex service script not found or not executable: $WORKDIR/scripts/convex-dev-service.sh"
   if command -v loginctl >/dev/null 2>&1; then
     linger_state="$(loginctl show-user "$USER" -p Linger --value 2>/dev/null || true)"
     if [ "$linger_state" != "yes" ]; then

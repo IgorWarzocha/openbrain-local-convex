@@ -15,7 +15,7 @@ No Slack. No MCP. No cloud embedding bill.
 - Find thoughts by meaning (`search`)
 - List recent notes (`recent`)
 - Show memory stats (`stats`)
-- Remove a thought by id (`remove`)
+- Remove a thought by selector (`remove`)
 
 ![openbrain](https://github.com/user-attachments/assets/95eaa96a-77c6-4d19-8600-72dd05a98d16)
 
@@ -88,7 +88,7 @@ brain capture "your thought"
 brain search "your query"
 brain recent --limit 20
 brain stats
-brain remove "<thought_id>"
+brain remove --recent 1
 ```
 
 ## 2) Local Server Mode (separate machine on your LAN)
@@ -182,9 +182,11 @@ When `OPENBRAIN_REMOTE_URL` is set, the CLI talks to the remote API directly and
 ```bash
 npm run brain -- capture "your thought"
 npm run brain -- search "your query"
+npm run brain -- search "your query" today
 npm run brain -- recent --limit 20
+npm run brain -- recent today
 npm run brain -- stats
-npm run brain -- remove "<thought_id>"
+npm run brain -- remove --recent 1
 ```
 
 ## API Endpoints

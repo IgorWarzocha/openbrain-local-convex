@@ -5,10 +5,9 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=%h/openbrain
-ExecStart=/usr/bin/env bash -lc 'cd %h/openbrain && npx convex dev --tail-logs disable'
+ExecStart=/usr/bin/env bash -lc 'cd %h/openbrain && exec %h/openbrain/scripts/convex-dev-service.sh'
 Restart=always
 RestartSec=2
 
 [Install]
 WantedBy=default.target
-
