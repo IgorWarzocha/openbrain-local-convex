@@ -144,6 +144,12 @@ export const listRecentThoughts = query({
   },
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(Math.floor(args.limit ?? 20), 1), 100);
+    if (!args.date) {
+      const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").take(limit);
+      return {
+        thoughts: thoughts.map((thought) => presentThought(thought)),
+      };
+    }
     const thoughts = await ctx.db.query("thoughts").withIndex("by_createdAt").order("desc").collect();
     return {
       thoughts: thoughts
